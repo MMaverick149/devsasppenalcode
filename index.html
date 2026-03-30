@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v101</title>
+    <title>SASP MDT - TERMINÁL v102</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -46,7 +46,7 @@
         @keyframes pulse { from { opacity: 1; } to { opacity: 0.7; } }
         
         .summary-box { padding: 20px; background: #000; border-top: 1px solid var(--border); }
-        #customAlert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: 15px 30px; border-radius: 8px; z-index: 10000; display: none; font-weight: 900; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #fff; }
+        #customAlert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: 15px 30px; border-radius: 8px; z-index: 10000; display: none; font-weight: 900; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #fff; text-align: center; }
         .mdt-credits { padding: 10px; font-size: 10px; color: #444; text-align: center; background: #0a0b0d; }
     </style>
 </head>
@@ -57,7 +57,7 @@
 <div id="loginScreen">
     <div class="login-box">
         <h1 style="color:var(--accent); margin-bottom: 5px;">SASP TERMINÁL</h1>
-        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">STATE OF SAN ANDREAS - MDT v101</p>
+        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">STATE OF SAN ANDREAS - MDT v102</p>
         <button class="btn-enter" onclick="enterApp()">Vstoupit do Evidence</button>
         <div class="login-credits">
             <b>DEVELOPED BY:</b> Gemini AI & MDT Team<br>
@@ -115,31 +115,41 @@
         setTimeout(() => { el.style.display = 'none'; }, 3000);
     }
 
-    // --- NOVÁ FUNKCE PRO PŘESNÉ ČTENÍ ROZMEZÍ ---
+    // --- POSÍLENÁ FUNKCE PRO DETEKCI ČÍSEL ---
     function parseRange(text, unit) {
-        let cleanText = text.replace(/\./g, ''); // Odstraní tečky (5.000 -> 5000)
-        let pattern;
+        // Vyčistíme tečky v tisících a převedeme na UPPER
+        let t = text.toUpperCase().replace(/\./g, '');
         
+        let min = 0;
+        let max = 0;
+
         if (unit === 'LET') {
-            pattern = /(?:OD|SAZBA)\s*(\d+)\s*(?:LET)?\s*(?:DO|AŽ)\s*(\d+)\s*LET/i;
+            // Hledá vzor: "číslo" následované "LET" nebo rozmezí "číslo až číslo let"
+            let match = t.match(/(\d+)\s*(?:AŽ|DO|AZ|LET|-)\s*(\d+)\s*LET/);
+            if (match) {
+                min = parseInt(match[1]);
+                max = parseInt(match[2]);
+            } else {
+                let single = t.match(/(\d+)\s*LET/);
+                if (single) max = parseInt(single[1]);
+            }
         } else {
-            pattern = /(?:OD|VÝŠI)\s*(\d+)\s*\$?\s*(?:DO|AŽ|-)\s*(\d+)\s*\$/i;
+            // Hledá vzor pro pokuty ($)
+            let match = t.match(/(\d+)\s*(?:AŽ|DO|AZ|-)\s*(\d+)\s*\$/);
+            if (match) {
+                min = parseInt(match[1]);
+                max = parseInt(match[2]);
+            } else {
+                let single = t.match(/(\d+)\s*\$/);
+                if (single) max = parseInt(single[1]);
+            }
         }
 
-        let match = cleanText.match(pattern);
-        if (match) {
-            return { min: parseInt(match[1]), max: parseInt(match[2]) };
-        }
+        // Speciální případ: Pokud text obsahuje "OD 1 ROKU", nastavíme min na 1
+        if (unit === 'LET' && t.includes("1 ROKU")) min = 1;
+        if (unit === 'LET' && t.match(/OD\s*(\d+)\s*LET/)) min = parseInt(t.match(/OD\s*(\d+)\s*LET/)[1]);
 
-        // Pokud není rozmezí "od-do", zkusíme jen "do X" nebo "sazba X"
-        let singlePattern = unit === 'LET' ? /(\d+)\s*LET/i : /(\d+)\s*\$/i;
-        let singleMatch = cleanText.match(singlePattern);
-        if (singleMatch) {
-            let val = parseInt(singleMatch[1]);
-            return { min: 0, max: val };
-        }
-
-        return { min: 0, max: 999999 };
+        return { min: min, max: max || 999 };
     }
 
     async function load() {
@@ -152,22 +162,22 @@
             laws = Array.from(doc.querySelectorAll('.law-item')).map(item => ({
                 title: item.getAttribute('data-title'),
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                    const text = line.innerText.toUpperCase();
+                    const text = line.innerText;
                     const rangeJ = parseRange(text, 'LET');
                     const rangeF = parseRange(text, '$');
 
                     return {
                         html: line.innerHTML,
-                        fullText: line.innerText,
-                        letter: (line.innerText.match(/^[a-z]\)/i) || [""])[0],
+                        fullText: text,
+                        letter: (text.match(/^[a-z]\)/i) || [""])[0],
                         valJ: line.getAttribute('data-fix-jail') || "",
                         valF: line.getAttribute('data-fix-fine') || "",
                         isFixJ: line.getAttribute('data-fix-jail') !== null,
                         isFixF: line.getAttribute('data-fix-fine') !== null,
                         minJ: rangeJ.min, maxJ: rangeJ.max,
                         minF: rangeF.min, maxF: rangeF.max,
-                        licW: text.includes("ZBROJNÍ"),
-                        licD: text.includes("ŘIDIČSKÝ")
+                        licW: text.toUpperCase().includes("ZBROJNÍ"),
+                        licD: text.toUpperCase().includes("ŘIDIČSKÝ")
                     };
                 })
             }));
@@ -187,8 +197,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div style="flex:1; font-size:12px;">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="${sub.minJ}-${sub.maxJ} Let" ${sub.isFixJ ? 'disabled' : ''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF ? 'disabled' : ''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="${sub.minJ}-${sub.maxJ} L">
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$">
                             <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:8px 12px; border-radius:4px; font-weight:900; cursor:pointer;">+</button>
                         </div>
                     `).join('')}
@@ -199,17 +209,20 @@
 
     function add(lIdx, sIdx) {
         const sub = laws[lIdx].subs[sIdx];
-        let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
-        let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
+        let jailInput = document.getElementById(`j_${lIdx}_${sIdx}`);
+        let fineInput = document.getElementById(`f_${lIdx}_${sIdx}`);
+        
+        let jail = parseInt(jailInput.value) || 0;
+        let fine = parseInt(fineInput.value) || 0;
 
-        // STRIKTNÍ KONTROLA PŘI PŘIDÁVÁNÍ
+        // Kontrola Min/Max při přidávání
         if (!sub.isFixJ) {
-            if (jail < sub.minJ) { showAlert(`MINIMUM JE ${sub.minJ} LET!`); return; }
-            if (jail > sub.maxJ) { showAlert(`MAXIMUM JE ${sub.maxJ} LET!`); return; }
+            if (jail < sub.minJ) { showAlert(`ZÁKON: MINIMÁLNĚ ${sub.minJ} LET!`); return; }
+            if (jail > sub.maxJ) { showAlert(`ZÁKON: MAXIMÁLNĚ ${sub.maxJ} LET!`); return; }
         }
-        if (!sub.isFixF && sub.maxF > 0 && sub.maxF < 999999) {
-            if (fine < sub.minF) { showAlert(`MINIMUM JE $${sub.minF.toLocaleString()}!`); return; }
-            if (fine > sub.maxF) { showAlert(`MAXIMUM JE $${sub.maxF.toLocaleString()}!`); return; }
+        if (!sub.isFixF && sub.maxF > 0) {
+            if (fine < sub.minF) { showAlert(`ZÁKON: MINIMÁLNÍ POKUTA $${sub.minF.toLocaleString()}`); return; }
+            if (fine > sub.maxF) { showAlert(`ZÁKON: MAXIMÁLNÍ POKUTA $${sub.maxF.toLocaleString()}`); return; }
         }
 
         protocol.push({
@@ -217,6 +230,10 @@
             jail, fine, minJ: sub.minJ, maxJ: sub.maxJ, minF: sub.minF, maxF: sub.maxF,
             isFixJ: sub.isFixJ, isFixF: sub.isFixF, licW: sub.licW, licD: sub.licD
         });
+        
+        // Vyčistit inputy po přidání
+        jailInput.value = sub.valJ;
+        fineInput.value = sub.valF;
         updateProtocol();
     }
 
@@ -228,12 +245,12 @@
                 <div style="font-size: 11px; color: #bbb; margin: 5px 0;">${p.fullText}</div>
                 <div class="proto-inputs">
                     <div style="display:inline-block">
-                        <small style="color:var(--info); font-size:9px">LET (${p.minJ}-${p.maxJ})</small><br>
-                        <input type="number" class="input-box" value="${p.jail}" ${p.isFixJ ? 'readonly' : ''} onchange="edit(${idx}, 'jail', this.value)">
+                        <small style="color:var(--info); font-size:9px">LET (ZÁKON: ${p.minJ}-${p.maxJ})</small><br>
+                        <input type="number" class="input-box" value="${p.jail}" onchange="edit(${idx}, 'jail', this.value)">
                     </div>
                     <div style="display:inline-block; margin-left:10px">
-                        <small style="color:var(--fine); font-size:9px">POKUTA</small><br>
-                        <input type="number" class="input-box" value="${p.fine}" ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
+                        <small style="color:var(--fine); font-size:9px">POKUTA ($)</small><br>
+                        <input type="number" class="input-box" value="${p.fine}" onchange="edit(${idx}, 'fine', this.value)">
                     </div>
                 </div>
                 ${p.licD ? '<div class="lic-alert-item">⚠ ODEBRAT ŘIDIČSKÝ PRŮKAZ</div>' : ''}
@@ -252,13 +269,13 @@
         let v = parseInt(val) || 0;
         const p = protocol[idx];
         
-        if (type === 'jail' && !p.isFixJ) {
-            if (v < p.minJ) { showAlert(`ZÁKON VYŽADUJE MINIMÁLNĚ ${p.minJ} LET!`); v = p.minJ; }
-            if (v > p.maxJ) { showAlert(`ZÁKON DOVOLUJE MAXIMÁLNĚ ${p.maxJ} LET!`); v = p.maxJ; }
+        if (type === 'jail') {
+            if (v < p.minJ) { showAlert(`CHYBA: Minimální sazba je ${p.minJ} let!`); v = p.minJ; }
+            if (v > p.maxJ) { showAlert(`CHYBA: Maximální sazba je ${p.maxJ} let!`); v = p.maxJ; }
         }
-        if (type === 'fine' && !p.isFixF && p.maxF > 0 && p.maxF < 999999) {
-            if (v < p.minF) { showAlert(`MINIMÁLNÍ POKUTA JE $${p.minF.toLocaleString()}`); v = p.minF; }
-            if (v > p.maxF) { showAlert(`MAXIMÁLNÍ POKUTA JE $${p.maxF.toLocaleString()}`); v = p.maxF; }
+        if (type === 'fine' && p.maxF > 0) {
+            if (v < p.minF) v = p.minF;
+            if (v > p.maxF) v = p.maxF;
         }
         
         protocol[idx][type] = v;
@@ -266,7 +283,7 @@
     }
 
     function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
-    function save() { alert("Protokol byl úspěšně uložen do databáze."); protocol = []; updateProtocol(); }
+    function save() { alert("Uloženo."); protocol = []; updateProtocol(); }
 </script>
 </body>
 </html>
