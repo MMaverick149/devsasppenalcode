@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v100</title>
+    <title>SASP MDT - TERMINÁL v101</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -18,10 +18,9 @@
         .btn-enter { background: var(--accent); color: #000; border: none; padding: 15px 40px; font-size: 18px; font-weight: 900; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin-bottom: 30px; }
         .login-credits { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px; font-size: 11px; color: #555; }
 
-        /* HLAVNÍ APLIKACE */
+        /* APP LAYOUT */
         #mainApp { display: none; height: 100vh; width: 100%; }
         .app-container { display: flex; height: 100%; width: 100%; }
-        #lawsContainer b, #lawsContainer strong { color: var(--accent) !important; font-weight: bold; }
         #leftPanel { flex: 3; border-right: 1px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 420px; background: var(--bg-panel); display: flex; flex-direction: column; }
         
@@ -32,35 +31,42 @@
         .law-content { display: none; padding: 10px 20px; background: #0f1114; }
         .law-card.active .law-content { display: block; }
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1a1c20; }
-        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
         
+        .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
+        .input-box:focus { border-color: var(--accent); }
+        .input-box:disabled { border-color: var(--danger) !important; color: var(--danger) !important; opacity: 1; cursor: not-allowed; }
+
+        /* PROTOCOL & WARNINGS */
         .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--info); margin: 10px; position: relative; border: 1px solid var(--border); }
         .lic-alert-item { color: var(--danger); background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger); padding: 5px; border-radius: 4px; font-size: 11px; font-weight: 900; margin-top: 5px; text-align: center; }
-        .warning-bar { color: white; padding: 10px; border-radius: 4px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; animation: pulse-red 0.8s infinite alternate; font-size: 13px; }
+        .warning-bar { color: white; padding: 10px; border-radius: 4px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; animation: pulse 0.8s infinite alternate; font-size: 13px; }
         .warn-driver { background: #ff6600; }
         .warn-weapon { background: var(--danger); }
-        @keyframes pulse-red { from { opacity: 1; } to { opacity: 0.8; } }
+        
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.7; } }
+        
         .summary-box { padding: 20px; background: #000; border-top: 1px solid var(--border); }
-        #customAlert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--danger); color: white; padding: 30px 60px; border-radius: 10px; z-index: 10000; display: none; font-weight: 900; border: 3px solid #fff; text-align: center; }
-        .mdt-credits { padding: 10px 20px; font-size: 10px; color: #444; text-align: center; border-top: 1px solid #1a1c20; background: #0a0b0d; }
+        #customAlert { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--danger); color: white; padding: 15px 30px; border-radius: 8px; z-index: 10000; display: none; font-weight: 900; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid #fff; }
+        .mdt-credits { padding: 10px; font-size: 10px; color: #444; text-align: center; background: #0a0b0d; }
     </style>
 </head>
 <body>
 
+<div id="customAlert">⚠️ CHYBA!</div>
+
 <div id="loginScreen">
     <div class="login-box">
         <h1 style="color:var(--accent); margin-bottom: 5px;">SASP TERMINÁL</h1>
-        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">OFFICIAL EVIDENCE SYSTEM</p>
+        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">STATE OF SAN ANDREAS - MDT v101</p>
         <button class="btn-enter" onclick="enterApp()">Vstoupit do Evidence</button>
         <div class="login-credits">
             <b>DEVELOPED BY:</b> Gemini AI & MDT Team<br>
-            <span style="font-size: 9px; opacity: 0.6;">© 2026 DEPARTMENT OF JUSTICE</span>
+            <span style="font-size: 9px; opacity: 0.6;">AUTHORIZED PERSONNEL ONLY</span>
         </div>
     </div>
 </div>
 
 <div id="mainApp">
-    <div id="customAlert">⚠️ CHYBA!</div>
     <div class="app-container">
         <div id="leftPanel">
             <div class="header-bar">
@@ -78,13 +84,13 @@
             <div id="warnWeapon" class="warning-bar warn-weapon">⚠️ ODEBRAT ZBROJNÍ PRŮKAZ</div>
             
             <div class="summary-box">
-                <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:15px; font-size: 18px;">
                     <span>CELKEM:</span>
                     <span><span id="sumJail" style="color:var(--info)">0</span> let | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
                 </div>
-                <button onclick="save()" style="width:100%; padding:15px; background:var(--info); color:white; border:none; border-radius:4px; font-weight:900; cursor:pointer;">ULOŽIT PROTOKOL</button>
+                <button onclick="save()" style="width:100%; padding:15px; background:var(--info); color:white; border:none; border-radius:4px; font-weight:900; cursor:pointer; width: 100%;">ULOŽIT DO DATABÁZE</button>
             </div>
-            <div class="mdt-credits">SASP MDT SYSTEM v10.0 | <b>Gemini AI & MDT Team</b></div>
+            <div class="mdt-credits">SASP MDT SYSTEM | <b>Gemini AI & MDT Team</b></div>
         </div>
     </div>
 </div>
@@ -109,6 +115,33 @@
         setTimeout(() => { el.style.display = 'none'; }, 3000);
     }
 
+    // --- NOVÁ FUNKCE PRO PŘESNÉ ČTENÍ ROZMEZÍ ---
+    function parseRange(text, unit) {
+        let cleanText = text.replace(/\./g, ''); // Odstraní tečky (5.000 -> 5000)
+        let pattern;
+        
+        if (unit === 'LET') {
+            pattern = /(?:OD|SAZBA)\s*(\d+)\s*(?:LET)?\s*(?:DO|AŽ)\s*(\d+)\s*LET/i;
+        } else {
+            pattern = /(?:OD|VÝŠI)\s*(\d+)\s*\$?\s*(?:DO|AŽ|-)\s*(\d+)\s*\$/i;
+        }
+
+        let match = cleanText.match(pattern);
+        if (match) {
+            return { min: parseInt(match[1]), max: parseInt(match[2]) };
+        }
+
+        // Pokud není rozmezí "od-do", zkusíme jen "do X" nebo "sazba X"
+        let singlePattern = unit === 'LET' ? /(\d+)\s*LET/i : /(\d+)\s*\$/i;
+        let singleMatch = cleanText.match(singlePattern);
+        if (singleMatch) {
+            let val = parseInt(singleMatch[1]);
+            return { min: 0, max: val };
+        }
+
+        return { min: 0, max: 999999 };
+    }
+
     async function load() {
         try {
             const res = await fetch('tresty.html?v=' + Date.now());
@@ -120,28 +153,21 @@
                 title: item.getAttribute('data-title'),
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
                     const text = line.innerText.toUpperCase();
-                    const fixJ = line.getAttribute('data-fix-jail');
-                    const fixF = line.getAttribute('data-fix-fine');
-                    let minJ = 0, maxJ = 999, minF = 0, maxF = 0;
-
-                    const jM = text.match(/(?:SAZBA|OD|DO|AŽ|V ROZMEZÍ)\s*([\d\s-]+)\s*LET/i);
-                    if (jM) {
-                        const n = jM[1].match(/\d+/g).map(Number);
-                        if (n.length >= 2) { minJ = n[0]; maxJ = n[1]; } else { maxJ = n[0]; }
-                    }
-                    const fM = text.match(/(?:POKUTOU|VÝŠI|OD|DO|AŽ|V ROZMEZÍ)\s*([\d.\s-]+)\s*\$/i);
-                    if (fM) {
-                        const n = fM[1].replace(/\./g, '').match(/\d+/g).map(Number);
-                        if (n.length >= 2) { minF = n[0]; maxF = n[1]; } else { maxF = n[0]; }
-                    }
+                    const rangeJ = parseRange(text, 'LET');
+                    const rangeF = parseRange(text, '$');
 
                     return {
-                        html: line.innerHTML, fullText: line.innerText,
+                        html: line.innerHTML,
+                        fullText: line.innerText,
                         letter: (line.innerText.match(/^[a-z]\)/i) || [""])[0],
-                        valJ: fixJ || "", valF: fixF || "",
-                        isFixJ: fixJ !== null, isFixF: fixF !== null,
-                        minJ, maxJ, minF, maxF,
-                        licW: text.includes("ZBROJNÍ"), licD: text.includes("ŘIDIČSKÝ")
+                        valJ: line.getAttribute('data-fix-jail') || "",
+                        valF: line.getAttribute('data-fix-fine') || "",
+                        isFixJ: line.getAttribute('data-fix-jail') !== null,
+                        isFixF: line.getAttribute('data-fix-fine') !== null,
+                        minJ: rangeJ.min, maxJ: rangeJ.max,
+                        minF: rangeF.min, maxF: rangeF.max,
+                        licW: text.includes("ZBROJNÍ"),
+                        licD: text.includes("ŘIDIČSKÝ")
                     };
                 })
             }));
@@ -161,8 +187,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div style="flex:1; font-size:12px;">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="Let" ${sub.isFixJ ? 'disabled value="FIX"' : ''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF ? 'disabled value="FIX"' : ''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="${sub.minJ}-${sub.maxJ} Let" ${sub.isFixJ ? 'disabled' : ''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF ? 'disabled' : ''}>
                             <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:8px 12px; border-radius:4px; font-weight:900; cursor:pointer;">+</button>
                         </div>
                     `).join('')}
@@ -176,13 +202,14 @@
         let jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
+        // STRIKTNÍ KONTROLA PŘI PŘIDÁVÁNÍ
         if (!sub.isFixJ) {
-            if (jail < sub.minJ) { showAlert(`MINIMUM: ${sub.minJ} LET`); return; }
-            if (jail > sub.maxJ) { showAlert(`MAXIMUM: ${sub.maxJ} LET`); return; }
+            if (jail < sub.minJ) { showAlert(`MINIMUM JE ${sub.minJ} LET!`); return; }
+            if (jail > sub.maxJ) { showAlert(`MAXIMUM JE ${sub.maxJ} LET!`); return; }
         }
-        if (!sub.isFixF && sub.maxF > 0) {
-            if (fine < sub.minF) { showAlert(`MINIMUM: $${sub.minF.toLocaleString()}`); return; }
-            if (fine > sub.maxF) { showAlert(`MAXIMUM: $${sub.maxF.toLocaleString()}`); return; }
+        if (!sub.isFixF && sub.maxF > 0 && sub.maxF < 999999) {
+            if (fine < sub.minF) { showAlert(`MINIMUM JE $${sub.minF.toLocaleString()}!`); return; }
+            if (fine > sub.maxF) { showAlert(`MAXIMUM JE $${sub.maxF.toLocaleString()}!`); return; }
         }
 
         protocol.push({
@@ -200,8 +227,14 @@
                 <div style="color:var(--accent); font-weight:900; font-size:13px;">${p.title} ${p.letter}</div>
                 <div style="font-size: 11px; color: #bbb; margin: 5px 0;">${p.fullText}</div>
                 <div class="proto-inputs">
-                    <input type="number" class="input-box" value="${p.jail}" ${p.isFixJ ? 'readonly' : ''} onchange="edit(${idx}, 'jail', this.value)">
-                    <input type="number" class="input-box" value="${p.fine}" ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
+                    <div style="display:inline-block">
+                        <small style="color:var(--info); font-size:9px">LET (${p.minJ}-${p.maxJ})</small><br>
+                        <input type="number" class="input-box" value="${p.jail}" ${p.isFixJ ? 'readonly' : ''} onchange="edit(${idx}, 'jail', this.value)">
+                    </div>
+                    <div style="display:inline-block; margin-left:10px">
+                        <small style="color:var(--fine); font-size:9px">POKUTA</small><br>
+                        <input type="number" class="input-box" value="${p.fine}" ${p.isFixF ? 'readonly' : ''} onchange="edit(${idx}, 'fine', this.value)">
+                    </div>
                 </div>
                 ${p.licD ? '<div class="lic-alert-item">⚠ ODEBRAT ŘIDIČSKÝ PRŮKAZ</div>' : ''}
                 ${p.licW ? '<div class="lic-alert-item" style="border-color:#ff4444; color:#ff4444">⚠ ODEBRAT ZBROJNÍ PRŮKAZ</div>' : ''}
@@ -215,18 +248,17 @@
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
     }
 
-    // --- OPRAVENÁ FUNKCE EDITACE ---
     function edit(idx, type, val) {
         let v = parseInt(val) || 0;
         const p = protocol[idx];
         
         if (type === 'jail' && !p.isFixJ) {
-            if (v < p.minJ) { showAlert(`OPRAVENO: Zákon vyžaduje MIN ${p.minJ} let.`); v = p.minJ; }
-            if (v > p.maxJ) { showAlert(`OPRAVENO: Zákon dovoluje MAX ${p.maxJ} let.`); v = p.maxJ; }
+            if (v < p.minJ) { showAlert(`ZÁKON VYŽADUJE MINIMÁLNĚ ${p.minJ} LET!`); v = p.minJ; }
+            if (v > p.maxJ) { showAlert(`ZÁKON DOVOLUJE MAXIMÁLNĚ ${p.maxJ} LET!`); v = p.maxJ; }
         }
-        if (type === 'fine' && !p.isFixF && p.maxF > 0) {
-            if (v < p.minF) { showAlert(`OPRAVENO: Zákon vyžaduje MIN $${p.minF.toLocaleString()}.`); v = p.minF; }
-            if (v > p.maxF) { showAlert(`OPRAVENO: Zákon dovoluje MAX $${p.maxF.toLocaleString()}.`); v = p.maxF; }
+        if (type === 'fine' && !p.isFixF && p.maxF > 0 && p.maxF < 999999) {
+            if (v < p.minF) { showAlert(`MINIMÁLNÍ POKUTA JE $${p.minF.toLocaleString()}`); v = p.minF; }
+            if (v > p.maxF) { showAlert(`MAXIMÁLNÍ POKUTA JE $${p.maxF.toLocaleString()}`); v = p.maxF; }
         }
         
         protocol[idx][type] = v;
@@ -234,7 +266,7 @@
     }
 
     function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
-    function save() { alert("Uloženo."); protocol = []; updateProtocol(); }
+    function save() { alert("Protokol byl úspěšně uložen do databáze."); protocol = []; updateProtocol(); }
 </script>
 </body>
 </html>
