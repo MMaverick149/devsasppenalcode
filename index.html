@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v114</title>
+    <title>SASP MDT - TERMINÁL v115</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -65,8 +65,8 @@
 <div id="modalOverlay">
     <div class="modal-box">
         <h1 style="color:var(--danger); font-size: 50px; margin:0;">⚠️</h1>
-        <h2 style="color:#fff;">NELEGÁLNÍ TREST</h2>
-        <p id="modalMsg" style="color:#ccc; font-size: 18px;"></p>
+        <h2 style="color:#fff; margin-bottom: 10px;">NELEGÁLNÍ TREST</h2>
+        <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px;"></p>
         <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; border-radius:5px;">OPRAVIT</button>
     </div>
 </div>
@@ -107,18 +107,32 @@
     function resetCase() {
         protocol = [];
         updateProtocol();
-        // Vyčistí i inputy v seznamu
-        document.querySelectorAll('.input-box').forEach(i => i.value = i.hasAttribute('disabled') ? i.value : '');
+        document.querySelectorAll('.input-box').forEach(i => { if(!i.disabled) i.value = ''; });
     }
 
     function parseLimits(text) {
         const cleanText = text.replace(/\./g, '').toLowerCase();
-        const nums = (cleanText.match(/\d+/g) || []).map(Number);
+        
+        // Detekce pokuty
         if (text.includes('$') || text.includes('pokut')) {
+            const nums = (cleanText.match(/\d+/g) || []).map(Number);
             return { min: 1, max: Math.max(...nums) || 999999, type: 'fine' };
         }
-        let min = cleanText.includes('od ') ? (nums[0] || 1) : 1;
-        return { min: min, max: Math.max(...nums) || 1, type: 'jail' };
+
+        // Detekce rozmezí "X-Y let" nebo "X až Y let"
+        const rangeMatch = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)/);
+        if (rangeMatch) {
+            return { min: parseInt(rangeMatch[1]), max: parseInt(rangeMatch[2]), type: 'jail' };
+        }
+
+        // Detekce "od X let do Y let"
+        const fromToMatch = cleanText.match(/od\s+(\d+)\s+.*do\s+(\d+)/);
+        if (fromToMatch) {
+            return { min: parseInt(fromToMatch[1]), max: parseInt(fromToMatch[2]), type: 'jail' };
+        }
+
+        const nums = (cleanText.match(/\d+/g) || []).map(Number);
+        return { min: 1, max: Math.max(...nums) || 1, type: 'jail' };
     }
 
     async function load() {
@@ -130,12 +144,12 @@
                 title: item.getAttribute('data-title'),
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
                     const text = line.innerText;
+                    const fixJ = line.getAttribute('data-fix-jail');
+                    const fixF = line.getAttribute('data-fix-fine');
                     return {
                         html: line.innerHTML, fullText: text,
-                        valJ: line.getAttribute('data-fix-jail') || "",
-                        valF: line.getAttribute('data-fix-fine') || "",
-                        isFixJ: line.getAttribute('data-fix-jail') !== null,
-                        isFixF: line.getAttribute('data-fix-fine') !== null,
+                        valJ: fixJ || "", valF: fixF || "",
+                        isFixJ: fixJ !== null, isFixF: fixF !== null,
                         limits: parseLimits(text),
                         licW: text.toUpperCase().includes("ZBROJNÍ"), licD: text.toUpperCase().includes("ŘIDIČSKÝ")
                     };
