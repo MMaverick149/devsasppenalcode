@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v116</title>
+    <title>SASP MDT - TERMINÁL v117</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -93,14 +93,13 @@
         document.querySelectorAll('.input-box').forEach(i => { if(!i.disabled) i.value = ''; });
     }
 
-    // NOVÉ JÁDRO PRO DETEKCI OBOU LIMITŮ ZÁROVEŇ
     function parseDualLimits(text) {
         const cleanText = text.replace(/\./g, '').toLowerCase();
         let limits = { jail: { min: 0, max: 0 }, fine: { max: 0 } };
 
-        // 1. Detekce vězení (rozmezí X-Y nebo od X do Y)
+        // 1. Detekce vězení (rozšířeno o "na X let")
         const jailRange = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)\s*let/);
-        const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*do\s+(\d+)\s+let/);
+        const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*(?:do|na)\s+(\d+)\s+let/); // Opraveno: do | na
         const jailSazba = cleanText.match(/sazba\s+(\d+)\s*[-–]\s*(\d+)/);
         
         if (jailRange) {
@@ -114,7 +113,7 @@
             limits.jail.max = parseInt(jailSazba[2]);
         }
 
-        // 2. Detekce pokuty (vždy max limit)
+        // 2. Detekce pokuty
         const fineMatch = cleanText.match(/(?:trest|pokut).*?(\d+)\s*\$/);
         if (fineMatch) {
             limits.fine.max = parseInt(fineMatch[1]);
@@ -175,7 +174,6 @@
 
         if (jail <= 0 && fine <= 0) { showModal("Trest nesmí být nulový!"); return; }
         
-        // KONTROLA VĚZENÍ (pokud existuje limit)
         if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
             if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
                 showModal(`Nelegální délka vězení! Sazba je ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
@@ -183,7 +181,6 @@
             }
         }
 
-        // KONTROLA POKUTY (pokud existuje limit)
         if (fine > 0 && !sub.isFixF && sub.limits.fine.max > 0) {
             if (fine > sub.limits.fine.max) {
                 showModal(`Nelegální výše pokuty! Maximální povolená částka je $${sub.limits.fine.max.toLocaleString()}.`);
