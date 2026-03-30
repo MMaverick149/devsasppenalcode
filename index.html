@@ -12,18 +12,15 @@
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        /* PŘIHLAŠOVACÍ OBRAZOVKA */
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-main); z-index: 200000; display: flex; justify-content: center; align-items: center; }
         .login-card { background: #111317; padding: 60px 40px; border-radius: 20px; text-align: center; width: 450px; border: 2px solid rgba(255, 204, 0, 0.1); animation: borderPulse 3s infinite ease-in-out; }
         @keyframes borderPulse { 0%, 100% { border-color: rgba(255, 204, 0, 0.1); } 50% { border-color: rgba(255, 204, 0, 0.6); } }
         .login-btn { background: var(--accent); color: #000; border: none; padding: 18px 40px; font-weight: 900; cursor: pointer; border-radius: 5px; font-size: 16px; text-transform: uppercase; width: 100%; }
 
-        /* MODÁL PRO CHYBY */
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; animation: pulse-alert 1s infinite; }
         @keyframes pulse-alert { 0%, 100% { box-shadow: 0 0 20px var(--danger); } 50% { box-shadow: 0 0 40px var(--danger); } }
 
-        /* APLIKACE */
         #mainApp { display: none; height: 100vh; width: 100%; }
         #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 400px; background: var(--bg-panel); display: flex; flex-direction: column; }
@@ -96,13 +93,15 @@
         document.querySelectorAll('.input-box').forEach(i => { if(!i.disabled) i.value = ''; });
     }
 
+    // NOVÉ JÁDRO PRO DETEKCI OBOU LIMITŮ ZÁROVEŇ
     function parseDualLimits(text) {
         const cleanText = text.replace(/\./g, '').toLowerCase();
         let limits = { jail: { min: 0, max: 0 }, fine: { max: 0 } };
 
-        // 1. Detekce vězení (rozmezí)
+        // 1. Detekce vězení (rozmezí X-Y nebo od X do Y)
         const jailRange = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)\s*let/);
         const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*do\s+(\d+)\s+let/);
+        const jailSazba = cleanText.match(/sazba\s+(\d+)\s*[-–]\s*(\d+)/);
         
         if (jailRange) {
             limits.jail.min = parseInt(jailRange[1]);
@@ -110,9 +109,12 @@
         } else if (jailFromTo) {
             limits.jail.min = parseInt(jailFromTo[1]);
             limits.jail.max = parseInt(jailFromTo[2]);
+        } else if (jailSazba) {
+            limits.jail.min = parseInt(jailSazba[1]);
+            limits.jail.max = parseInt(jailSazba[2]);
         }
 
-        // 2. Detekce pokuty
+        // 2. Detekce pokuty (vždy max limit)
         const fineMatch = cleanText.match(/(?:trest|pokut).*?(\d+)\s*\$/);
         if (fineMatch) {
             limits.fine.max = parseInt(fineMatch[1]);
@@ -173,7 +175,7 @@
 
         if (jail <= 0 && fine <= 0) { showModal("Trest nesmí být nulový!"); return; }
         
-        // KONTROLA VĚZENÍ
+        // KONTROLA VĚZENÍ (pokud existuje limit)
         if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
             if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
                 showModal(`Nelegální délka vězení! Sazba je ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
@@ -181,7 +183,7 @@
             }
         }
 
-        // KONTROLA POKUTY
+        // KONTROLA POKUTY (pokud existuje limit)
         if (fine > 0 && !sub.isFixF && sub.limits.fine.max > 0) {
             if (fine > sub.limits.fine.max) {
                 showModal(`Nelegální výše pokuty! Maximální povolená částka je $${sub.limits.fine.max.toLocaleString()}.`);
