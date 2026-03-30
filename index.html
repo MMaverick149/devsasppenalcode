@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - Penal Code System</title>
+    <title>SASP MDT - TERMINÁL v100</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #14161a;
@@ -12,15 +12,13 @@
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        /* --- LOGIN SCREEN STYLY --- */
+        /* LOGIN SCREEN */
         #loginScreen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #1a1c20 0%, #0a0b0d 100%); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 99999; transition: opacity 0.5s ease-out; }
         .login-box { text-align: center; background: var(--bg-panel); padding: 50px; border-radius: 15px; border: 1px solid var(--border); box-shadow: 0 0 50px rgba(0,0,0,0.5); width: 400px; position: relative; }
         .btn-enter { background: var(--accent); color: #000; border: none; padding: 15px 40px; font-size: 18px; font-weight: 900; border-radius: 5px; cursor: pointer; text-transform: uppercase; margin-bottom: 30px; }
-        
-        /* Credits na login screenu */
-        .login-credits { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px; font-size: 11px; color: #555; letter-spacing: 1px; }
+        .login-credits { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 10px; font-size: 11px; color: #555; }
 
-        /* --- HLAVNÍ APLIKACE STYLY --- */
+        /* HLAVNÍ APLIKACE */
         #mainApp { display: none; height: 100vh; width: 100%; }
         .app-container { display: flex; height: 100%; width: 100%; }
         #lawsContainer b, #lawsContainer strong { color: var(--accent) !important; font-weight: bold; }
@@ -36,10 +34,6 @@
         .row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1a1c20; }
         .input-box { background: #000; border: 1px solid var(--border); color: #fff; padding: 8px; width: 85px; text-align: center; border-radius: 4px; font-weight: bold; outline: none; }
         
-        /* Credits v pravém panelu (MDT) */
-        .mdt-credits { padding: 10px 20px; font-size: 10px; color: #444; text-align: center; border-top: 1px solid #1a1c20; background: #0a0b0d; }
-
-        /* Ostatní prvky */
         .protocol-item { background: #000; padding: 15px; border-radius: 8px; border-left: 4px solid var(--info); margin: 10px; position: relative; border: 1px solid var(--border); }
         .lic-alert-item { color: var(--danger); background: rgba(255, 68, 68, 0.1); border: 1px solid var(--danger); padding: 5px; border-radius: 4px; font-size: 11px; font-weight: 900; margin-top: 5px; text-align: center; }
         .warning-bar { color: white; padding: 10px; border-radius: 4px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; animation: pulse-red 0.8s infinite alternate; font-size: 13px; }
@@ -47,7 +41,8 @@
         .warn-weapon { background: var(--danger); }
         @keyframes pulse-red { from { opacity: 1; } to { opacity: 0.8; } }
         .summary-box { padding: 20px; background: #000; border-top: 1px solid var(--border); }
-        #customAlert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--danger); color: white; padding: 30px 60px; border-radius: 10px; z-index: 10000; display: none; font-weight: 900; border: 3px solid #fff; }
+        #customAlert { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: var(--danger); color: white; padding: 30px 60px; border-radius: 10px; z-index: 10000; display: none; font-weight: 900; border: 3px solid #fff; text-align: center; }
+        .mdt-credits { padding: 10px 20px; font-size: 10px; color: #444; text-align: center; border-top: 1px solid #1a1c20; background: #0a0b0d; }
     </style>
 </head>
 <body>
@@ -55,13 +50,11 @@
 <div id="loginScreen">
     <div class="login-box">
         <h1 style="color:var(--accent); margin-bottom: 5px;">SASP TERMINÁL</h1>
-        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">SECURE ACCESS GATEWAY</p>
-        
+        <p style="color:#666; margin-bottom: 40px; letter-spacing: 2px; font-size: 12px;">OFFICIAL EVIDENCE SYSTEM</p>
         <button class="btn-enter" onclick="enterApp()">Vstoupit do Evidence</button>
-
         <div class="login-credits">
-            <b>DEVELOPED BY:</b> Nathaniel Hartman (DC:michal1448) & MDT Team<br>
-            <span style="font-size: 9px; opacity: 0.6;">© 2026 SASP Nathaniel Hartman </span>
+            <b>DEVELOPED BY:</b> Gemini AI & MDT Team<br>
+            <span style="font-size: 9px; opacity: 0.6;">© 2026 DEPARTMENT OF JUSTICE</span>
         </div>
     </div>
 </div>
@@ -91,10 +84,7 @@
                 </div>
                 <button onclick="save()" style="width:100%; padding:15px; background:var(--info); color:white; border:none; border-radius:4px; font-weight:900; cursor:pointer;">ULOŽIT PROTOKOL</button>
             </div>
-
-            <div class="mdt-credits">
-                SASP MDT SYSTEM v1.0.0 | <b>© 2026 SASP Nathaniel Hartman</b>
-            </div>
+            <div class="mdt-credits">SASP MDT SYSTEM v10.0 | <b>Gemini AI & MDT Team</b></div>
         </div>
     </div>
 </div>
@@ -146,8 +136,7 @@
                     }
 
                     return {
-                        html: line.innerHTML,
-                        fullText: line.innerText,
+                        html: line.innerHTML, fullText: line.innerText,
                         letter: (line.innerText.match(/^[a-z]\)/i) || [""])[0],
                         valJ: fixJ || "", valF: fixF || "",
                         isFixJ: fixJ !== null, isFixF: fixF !== null,
@@ -188,12 +177,12 @@
         let fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
         if (!sub.isFixJ) {
-            if (jail < sub.minJ) { showAlert(`MIN: ${sub.minJ} LET! Uprav to podle paragrafu!`); return; }
-            if (jail > sub.maxJ) { showAlert(`MAX: ${sub.maxJ} LET! Uprav to podle paragrafu!`); return; }
+            if (jail < sub.minJ) { showAlert(`MINIMUM: ${sub.minJ} LET`); return; }
+            if (jail > sub.maxJ) { showAlert(`MAXIMUM: ${sub.maxJ} LET`); return; }
         }
         if (!sub.isFixF && sub.maxF > 0) {
-            if (fine < sub.minF) { showAlert(`MIN: $${sub.minF.toLocaleString()}`); return; }
-            if (fine > sub.maxF) { showAlert(`MAX: $${sub.maxF.toLocaleString()}`); return; }
+            if (fine < sub.minF) { showAlert(`MINIMUM: $${sub.minF.toLocaleString()}`); return; }
+            if (fine > sub.maxF) { showAlert(`MAXIMUM: $${sub.maxF.toLocaleString()}`); return; }
         }
 
         protocol.push({
@@ -226,11 +215,20 @@
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
     }
 
+    // --- OPRAVENÁ FUNKCE EDITACE ---
     function edit(idx, type, val) {
         let v = parseInt(val) || 0;
         const p = protocol[idx];
-        if (type === 'jail' && !p.isFixJ) { if (v < p.minJ) v = p.minJ; if (v > p.maxJ) v = p.maxJ; }
-        if (type === 'fine' && !p.isFixF && p.maxF > 0) { if (v < p.minF) v = p.minF; if (v > p.maxF) v = p.maxF; }
+        
+        if (type === 'jail' && !p.isFixJ) {
+            if (v < p.minJ) { showAlert(`OPRAVENO: Zákon vyžaduje MIN ${p.minJ} let.`); v = p.minJ; }
+            if (v > p.maxJ) { showAlert(`OPRAVENO: Zákon dovoluje MAX ${p.maxJ} let.`); v = p.maxJ; }
+        }
+        if (type === 'fine' && !p.isFixF && p.maxF > 0) {
+            if (v < p.minF) { showAlert(`OPRAVENO: Zákon vyžaduje MIN $${p.minF.toLocaleString()}.`); v = p.minF; }
+            if (v > p.maxF) { showAlert(`OPRAVENO: Zákon dovoluje MAX $${p.maxF.toLocaleString()}.`); v = p.maxF; }
+        }
+        
         protocol[idx][type] = v;
         updateProtocol();
     }
