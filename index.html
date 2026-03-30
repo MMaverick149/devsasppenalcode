@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v109</title>
+    <title>SASP MDT - TERMINÁL v110</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -21,18 +21,25 @@
         #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 400px; background: var(--bg-panel); display: flex; flex-direction: column; }
         
-        /* ŽLUTÝ TUČNÝ TEXT V POPISU */
+        /* POPIS TRESTNÉHO ČINU - ZVĚTŠENÝ */
+        .law-description {
+            flex: 1;
+            font-size: 16px; /* Zvětšeno z 14px */
+            color: #ddd;
+            line-height: 1.5;
+        }
         .law-description b, .law-description strong { 
             color: var(--accent) !important; 
             font-weight: 900 !important;
         }
 
-        /* INPUTY - ŽLUTÉ A TUČNÉ */
+        /* INPUTY - ZMENŠENÉ PÍSMO */
         .input-box { 
             background: #000 !important; border: 1px solid #444; 
-            color: var(--accent) !important; font-weight: 950 !important; 
+            color: #ffcc00 !important; font-weight: 950 !important; 
             padding: 10px 5px; width: 90px; text-align: center; border-radius: 4px; 
-            font-size: 22px; outline: none;
+            font-size: 16px; /* Zmenšeno z 22px */
+            outline: none;
             text-shadow: 0 0 5px rgba(255, 204, 0, 0.4);
         }
         .input-box:disabled { color: #333 !important; border-color: #222; opacity: 0.6; }
@@ -44,7 +51,7 @@
         .protocol-title { color: var(--accent); font-weight: 900; font-size: 16px; margin-bottom: 5px; }
         .protocol-value { color: var(--accent); font-weight: 900; font-size: 24px; text-transform: uppercase; }
 
-        .warning-bar { color: white; padding: 15px; border-radius: 4px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; animation: pulse-red 1s infinite; }
+        .warning-bar { color: white; padding: 15px; border-radius: 4px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; animation: pulse-red 1s infinite; font-size: 14px; }
         @keyframes pulse-red { 0%, 100% { background: #600; } 50% { background: var(--danger); } }
     </style>
 </head>
@@ -53,7 +60,7 @@
 <div id="modalOverlay">
     <div class="modal-box">
         <h1 style="color:var(--danger); font-size: 60px; margin: 0;">⚠️</h1>
-        <h2 style="color:#fff; margin: 10px 0;">NELEGÁLNÍ TREST</h2>
+        <h2 style="color:#fff; margin: 10px 0;">NEDOVOLENÝ TREST</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; line-height: 1.6;"></p>
         <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; margin-top:20px; border-radius:5px;">OPRAVIT</button>
     </div>
@@ -77,7 +84,7 @@
         <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
             <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:20px; font-size: 22px;">
                 <span>CELKEM:</span>
-                <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
+                <span><span id="sumJail" style="color:var(--info)">0</span> Vězení | <span id="sumFine" style="color:var(--fine)">0</span> $ Pokuta</span>
             </div>
             <button onclick="location.reload()" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; cursor:pointer; font-size: 16px; border-radius:5px;">NOVÝ PŘÍPAD</button>
         </div>
@@ -134,7 +141,7 @@
                 <div style="padding:15px; display:none;">
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
-                            <div class="law-description" style="flex:1; font-size:14px; color:#ddd;">${sub.html}</div>
+                            <div class="law-description">${sub.html}</div>
                             <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="JAIL" ${sub.isFixJ ? 'disabled' : ''}>
                             <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="FINE" ${sub.isFixF ? 'disabled' : ''}>
                             <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:12px 18px; border-radius:4px; font-weight:900; cursor:pointer; font-size:18px;">+</button>
@@ -181,7 +188,6 @@
     }
 
     function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
-    load();
 </script>
 </body>
 </html>
