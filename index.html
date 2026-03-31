@@ -2,7 +2,11 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v145</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>SASP MDT - TERMINÁL v146</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -27,7 +31,7 @@
         .input-box { background: #000; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 85px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
         .input-box:disabled { opacity: 0.05; cursor: not-allowed; }
         
-        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 300000; display: none; justify-content: center; align-items: center; }
+        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 300000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; }
         
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; border-left: 4px solid var(--accent); }
@@ -38,7 +42,7 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v145</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v146</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT</button>
 </div>
 
@@ -79,10 +83,16 @@
     let laws = [];
     let protocol = [];
 
-    function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
+    function login() { 
+        document.getElementById('loginOverlay').style.display = 'none'; 
+        document.getElementById('mainApp').style.display = 'flex'; 
+        load(); 
+    }
+    
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
     async function load() {
+        // Cache busting v URL pro jistotu
         const res = await fetch('tresty.html?v=' + Date.now());
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -90,14 +100,16 @@
             id: item.id || 'L' + Math.random().toString(36).substr(2, 5),
             title: item.getAttribute('data-title'),
             subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                const txt = line.innerText.toLowerCase();
+                const rawText = line.innerText;
+                const txt = rawText.toLowerCase();
                 const maxMatch = txt.match(/(?:do|až)\s+(\d+)\s+let/i);
                 return {
-                    html: line.innerHTML, text: line.innerText,
-                    hasJ: txt.includes("let") || txt.includes("roku") || txt.includes("doživotí"),
+                    html: line.innerHTML, 
+                    text: rawText,
+                    hasJ: txt.includes("let") || txt.includes("roku") || txt.includes("doživotí") || txt.includes("odnětí"),
                     hasF: txt.includes("pokut") || txt.includes("$") || txt.includes("peněžit"),
-                    isLife: txt.includes("doživotí"),
-                    isLicense: line.innerText.includes("ODEBRAT"),
+                    isLifeInLaw: txt.includes("doživotí"),
+                    isLicenseInLaw: rawText.includes("ODEBRAT"),
                     maxJ: maxMatch ? parseInt(maxMatch[1]) : 999
                 };
             })
@@ -128,37 +140,32 @@
         const sub = laws[lIdx].subs[sIdx];
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
-        // 1. Priorita: Odebrání průkazu
-        if (sub.isLicense) {
-            showModal("ODEBRÁNÍ PRŮKAZU", "Tento čin vyžaduje odebrání průkazu. Je hotovo?", () => {
-                showModal("ADMINISTRACE", "Byl záznam zapsán v kartě občana?", () => {
-                    // Po průkazech kontrolujeme, jestli tam náhodou není i doživotí
-                    if(sub.isLife || valJ >= 99) checkLife(lIdx, sIdx); else checkMax(lIdx, sIdx);
+        // Kontrola 1: Průkaz (pouze pokud je v textu daného řádku)
+        if (sub.isLicenseInLaw) {
+            showModal("ODEBRÁNÍ PRŮKAZU", "Tento řádek vyžaduje odebrání průkazu. Máte hotovo?", () => {
+                showModal("ZÁZNAM", "Byl záznam zapsán v kartě občana?", () => {
+                    finalValidation(lIdx, sIdx, valJ);
                 }, "2/2");
             }, "1/2");
-        } 
-        // 2. Priorita: Doživotí (pokud nebyl průkaz)
-        else if (sub.isLife || valJ >= 99) {
-            checkLife(lIdx, sIdx);
-        }
-        // 3. Priorita: Horní hranice
-        else {
-            checkMax(lIdx, sIdx);
-        }
-    }
-
-    function checkLife(lIdx, sIdx) {
-        showModal("DOŽIVOTNÍ TREST", "Udělujete doživotí. Máte k tomu oprávnění?", () => {
-            showModal("SOUDNÍ SOUHLAS", "Byl u rozsudku přítomen SZ nebo Soudce?", () => add(lIdx, sIdx), "2/2");
-        }, "1/2");
-    }
-
-    function checkMax(lIdx, sIdx) {
-        const sub = laws[lIdx].subs[sIdx];
-        const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
-        if (valJ > sub.maxJ && sub.maxJ !== 999) {
-            showModal("PŘEKROČENÍ HRANICE", `Trest ${valJ} let je nad hranicí zákona (${sub.maxJ} let). Vyžaduje SZ/Soud.`, () => add(lIdx, sIdx), "SOUD");
         } else {
+            finalValidation(lIdx, sIdx, valJ);
+        }
+    }
+
+    function finalValidation(lIdx, sIdx, valJ) {
+        const sub = laws[lIdx].subs[sIdx];
+        
+        // Kontrola 2: Doživotí
+        if (sub.isLifeInLaw || valJ >= 99) {
+            showModal("DOŽIVOTNÍ TREST", "Pozor, udělujete doživotí. Máte k tomu oprávnění?", () => {
+                showModal("SOUDNÍ SOUHLAS", "Byl u rozsudku přítomen SZ nebo Soudce?", () => add(lIdx, sIdx), "2/2");
+            }, "1/2");
+        } 
+        // Kontrola 3: Horní hranice
+        else if (valJ > sub.maxJ && sub.maxJ !== 999) {
+            showModal("SOUDNÍ ŘÍZENÍ", `Trest ${valJ} let je nad hranicí zákona (${sub.maxJ} let). Vyžaduje přítomnost SZ/Soudce.`, () => add(lIdx, sIdx), "SOUD");
+        } 
+        else {
             add(lIdx, sIdx);
         }
     }
@@ -175,10 +182,15 @@
         const j = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const f = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
         protocol.push({ 
-            id: Date.now(), title: laws[lIdx].title, sub: laws[lIdx].subs[sIdx].text, 
-            jail: j, fine: f, isLife: laws[lIdx].subs[sIdx].isLife || j >= 99 
+            id: Date.now(), 
+            title: laws[lIdx].title, 
+            sub: laws[lIdx].subs[sIdx].text, 
+            jail: j, 
+            fine: f, 
+            isLife: laws[lIdx].subs[sIdx].isLifeInLaw || j >= 99 
         });
-        update(); closeModal();
+        update(); 
+        closeModal();
     }
 
     function update() {
@@ -186,9 +198,9 @@
         protocol.forEach(p => { if(p.isLife) hasLife = true; else totalJ += p.jail; });
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card">
-                <span style="color:var(--accent); font-weight:900; font-size:12px;">${p.title}</span>
+                <span style="color:var(--accent); font-weight:900; font-size:12px; text-transform:uppercase;">${p.title}</span>
                 <div style="font-size:18px; font-weight:900; margin:5px 0;">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
-                <button onclick="protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
+                <button onclick="protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
             </div>
         `).join('');
         document.getElementById('courtAlert').style.display = (totalJ > 20 || hasLife) ? 'block' : 'none';
