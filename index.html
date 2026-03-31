@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>SASP MDT - TERMINÁL v148</title>
+    <title>SASP MDT - TERMINÁL v149</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -12,7 +12,9 @@
         }
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        b, strong { color: var(--accent) !important; font-weight: 900; }
+        
+        /* Zajištění žlutého tučného textu pro sazby */
+        b, strong, .highlight { color: var(--accent) !important; font-weight: 900; }
 
         #loginOverlay { position: fixed; width: 100%; height: 100%; background: var(--bg-main); z-index: 200000; display: flex; justify-content: center; align-items: center; flex-direction: column; }
         #mainApp { display: none; height: 100vh; width: 100%; }
@@ -20,20 +22,22 @@
         #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 420px; background: var(--bg-panel); display: flex; flex-direction: column; }
         
-        .law-item { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #16181d; overflow: hidden; }
+        .law-item { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #16181d; overflow: hidden; scroll-margin-top: 20px; }
         .law-category-header { padding: 15px; background: #1c1f24; color: var(--accent); font-weight: 900; cursor: pointer; border-bottom: 1px solid var(--border); text-transform: uppercase; }
         
-        .law-content { padding: 10px; display: none; background: #111317; }
+        .law-content { padding: 10px; display: block; background: #111317; }
         .row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #1a1c20; }
-        .law-description { flex: 1; font-size: 14px; color: #eee; }
+        .law-description { flex: 1; font-size: 14px; color: #eee; line-height: 1.4; }
         
         .input-box { background: #000; border: 1px solid #444; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 85px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
         
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 300000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 550px; }
         
-        .protocol-card { background: #000; border: 1px solid var(--border); margin-bottom: 10px; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); position: relative; cursor: pointer; }
-        .license-badge { font-size: 10px; background: var(--danger); color: white; padding: 2px 6px; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
+        .protocol-card { background: #000; border: 1px solid var(--border); margin-bottom: 10px; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); position: relative; cursor: pointer; transition: 0.2s; }
+        .protocol-card:hover { border-color: var(--accent); }
+        
+        .badge { font-size: 11px; background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-weight: 900; margin-left: 8px; }
         
         .status-bar { color: white; padding: 14px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; }
         .add-btn { background: var(--accent); border: none; padding: 10px 20px; font-weight: 900; cursor: pointer; border-radius: 4px; color: #000; }
@@ -42,13 +46,13 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v148</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v149</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT DO SYSTÉMU</button>
 </div>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">KROK 1/2</h3>
+        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">STATUS</h3>
         <h1 id="modalIcon" style="font-size: 60px; margin: 15px 0;">⚠️</h1>
         <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">VAROVÁNÍ</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 17px; margin-bottom: 30px;"></p>
@@ -60,7 +64,7 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:15px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Vyhledat v Penal Code..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Hledat paragraf..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:15px; flex-grow: 1;"></div>
     </div>
@@ -90,33 +94,43 @@
         const res = await fetch('tresty.html?v=' + Date.now());
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        laws = Array.from(doc.querySelectorAll('.law-item')).map(item => ({
-            id: item.id || 'L' + Math.random().toString(36).substr(2, 5),
-            title: item.getAttribute('data-title'),
-            subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                const raw = line.innerText;
-                const txt = raw.toLowerCase();
-                const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až)\s+(\d+)\s+let/i);
-                return {
-                    html: line.innerHTML, text: raw,
-                    hasJ: txt.includes("let") || txt.includes("roku") || txt.includes("doživotí"),
-                    hasF: txt.includes("pokut") || txt.includes("$"),
-                    isLife: txt.includes("doživotí"),
-                    isLicense: raw.includes("ODEBRAT"),
-                    isZP: raw.includes("Zbrojní"), isRP: raw.includes("Řidičský"),
-                    minJ: rangeMatch ? parseInt(rangeMatch[1]) : 0,
-                    maxJ: rangeMatch ? parseInt(rangeMatch[2]) : (txt.match(/(?:sazba|do)\s+(\d+)\s+let/i) ? parseInt(txt.match(/(?:sazba|do)\s+(\d+)\s+let/i)[1]) : 999)
-                };
-            })
-        }));
+        
+        laws = Array.from(doc.querySelectorAll('.law-item')).map(item => {
+            let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+            
+            // Oprava pro §7 - Ruční přidání bodu (d), pokud chybí
+            if (item.getAttribute('data-title').includes('§7') && !subs.some(s => s.text.includes('(d)'))) {
+                subs.splice(3, 0, parseSub(
+                    "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz",
+                    "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"
+                ));
+            }
+
+            return { id: item.id || 'L' + Math.random().toString(36).substr(2, 5), title: item.getAttribute('data-title'), subs: subs };
+        });
         render();
+    }
+
+    function parseSub(raw, html) {
+        const txt = raw.toLowerCase();
+        const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až)\s+(\d+)\s+let/i);
+        const singleMatch = txt.match(/(?:sazba|do)\s+(\d+)\s+let/i);
+        return {
+            text: raw, html: html,
+            hasJ: txt.includes("let") || txt.includes("doživotí"),
+            hasF: txt.includes("pokut") || txt.includes("$"),
+            isLife: txt.includes("doživotí"),
+            isZP: raw.includes("Zbrojní"), isRP: raw.includes("Řidičský"),
+            minJ: rangeMatch ? parseInt(rangeMatch[1]) : 0,
+            maxJ: rangeMatch ? parseInt(rangeMatch[2]) : (singleMatch ? parseInt(singleMatch[1]) : 999)
+        };
     }
 
     function render() {
         const search = document.getElementById('searchInput').value.toLowerCase();
         document.getElementById('lawsContainer').innerHTML = laws.filter(l => l.title.toLowerCase().includes(search)).map((law, lIdx) => `
             <div class="law-item" id="${law.id}">
-                <div class="law-category-header" onclick="const c=this.nextElementSibling; c.style.display=c.style.display==='block'?'none':'block'">${law.title}</div>
+                <div class="law-category-header" onclick="const c=this.nextElementSibling; c.style.display=c.style.display==='none'?'block':'none'">${law.title}</div>
                 <div class="law-content">
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
@@ -136,23 +150,22 @@
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
         if (valJ < sub.minJ && valJ !== 0) {
-            showModal("MINIMÁLNÍ SAZBA", `Zákon vyžaduje u tohoto činu minimálně ${sub.minJ} let.`, () => closeModal(), "CHYBA");
+            showModal("PORUŠENÍ SAZBY", `Zákon ukládá pro tento čin MINIMÁLNĚ ${sub.minJ} let.`, () => closeModal(), "STOP");
             return;
         }
 
-        if (sub.isLicense) {
-            showModal("ODEBRÁNÍ PRŮKAZU", `Musíte odebrat: ${sub.isZP?'Zbrojní':''} ${sub.isRP?'Řidičský':''}. Je hotovo?`, () => {
-                showModal("ZÁPIS", "Byl odebraný průkaz zapsán do karty občana?", () => validateLife(lIdx, sIdx, valJ), "2/2");
-            }, "1/2");
+        if (sub.isZP || sub.isRP) {
+            let msg = "Tento čin vyžaduje odebrání: " + (sub.isZP ? "ZBROJNÍ " : "") + (sub.isRP ? "ŘIDIČSKÝ " : "") + "průkaz. Máte hotovo?";
+            showModal("ODEBRÁNÍ PRŮKAZU", msg, () => validateLife(lIdx, sIdx, valJ), "PRŮKAZY");
         } else { validateLife(lIdx, sIdx, valJ); }
     }
 
     function validateLife(lIdx, sIdx, valJ) {
         const sub = laws[lIdx].subs[sIdx];
         if (sub.isLife || valJ >= 99) {
-            showModal("DOŽIVOTNÍ TREST", "Udělujete doživotí. Máte k tomu souhlas SZ/Soudu?", () => add(lIdx, sIdx), "SOUD");
+            showModal("DOŽIVOTNÍ TREST", "Udělujete doživotí. Je přítomen SZ nebo Soudce?", () => add(lIdx, sIdx), "SOUD");
         } else if (valJ > sub.maxJ && sub.maxJ !== 999) {
-            showModal("PŘEKROČENÍ MAXIMA", `Trest ${valJ} let je nad limitem ${sub.maxJ} let. Vyžaduje SZ/Soudu!`, () => add(lIdx, sIdx), "SOUD");
+            showModal("PŘEKROČENÍ MAXIMA", `Trest ${valJ} J je nad limitem ${sub.maxJ} J. Vyžaduje SZ/Soudce!`, () => add(lIdx, sIdx), "SOUD");
         } else { add(lIdx, sIdx); }
     }
 
@@ -181,10 +194,10 @@
         protocol.forEach(p => { if(p.isLife) hasLife = true; else totalJ += p.jail; });
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card" onclick="document.getElementById('${p.lawId}').scrollIntoView({behavior:'smooth'})">
-                <b>${p.title}</b> 
-                ${p.rp ? '<span class="license-badge">ŘP</span>' : ''} ${p.zp ? '<span class="license-badge">ZP</span>' : ''}
-                <div style="font-size:18px; font-weight:900; margin-top:5px;">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
-                <button onclick="event.stopPropagation(); protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
+                <b>${p.title}</b>
+                ${p.zp ? '<span class="badge">ZP</span>' : ''}${p.rp ? '<span class="badge">ŘP</span>' : ''}
+                <div style="font-size:19px; font-weight:900; margin-top:8px;">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
+                <button onclick="event.stopPropagation(); protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:12px; top:12px; background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold;">✕</button>
             </div>
         `).join('');
         document.getElementById('courtAlert').style.display = (totalJ > 20 || hasLife) ? 'block' : 'none';
