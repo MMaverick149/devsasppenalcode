@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v142</title>
+    <title>SASP MDT - TERMINÁL v143</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -26,7 +26,7 @@
         .law-description { flex: 1; font-size: 14px; color: #eee; }
         
         .input-box { background: #000; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 85px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
-        .input-box:disabled { opacity: 0.1; cursor: not-allowed; border-color: #111; }
+        .input-box:disabled { opacity: 0.05; cursor: not-allowed; border-color: #111; color: transparent !important; }
         
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 300000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; }
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v142</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v143</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT DO SYSTÉMU</button>
 </div>
 
@@ -86,39 +86,51 @@
     function getHardLimits(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
         const hasLife = clean.includes("doživotí");
+        // Striktní detekce existence trestu
         const hasJ = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || hasLife;
         const hasF = clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit");
         
-        let lim = { jail: 0, fine: 0, life: hasLife, hasJ, hasF };
-        const range = clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i);
-        if (range) lim.jail = parseInt(range[2]);
-        else {
-            const single = clean.match(/(\d+)\s+let/i);
-            if (single) lim.jail = parseInt(single[1]);
+        let lim = { jail: "", fine: "", life: hasLife, hasJ, hasF };
+        
+        if (hasJ) {
+            if (hasLife) { lim.jail = 99; }
+            else {
+                const range = clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i) || clean.match(/od\s+(\d+)\s+(?:let|roku|roků)?\s*(?:do|až)\s+(\d+)\s+let/i);
+                if (range) lim.jail = parseInt(range[2]);
+                else {
+                    const single = clean.match(/(\d+)\s+let/i) || clean.match(/sazba\s+(\d+)/i);
+                    if (single) lim.jail = parseInt(single[1]);
+                }
+            }
         }
-        const fine = clean.match(/do\s*(\d[\d\s]*)\s*\$/i);
-        if(fine) lim.fine = parseInt(fine[1].replace(/\D/g, ''));
+        
+        if (hasF) {
+            const fineMatch = clean.match(/do\s*(\d[\d\s]*)\s*\$/i) || clean.match(/výši\s*(\d[\d\s]*)\s*\$/i);
+            if(fineMatch) lim.fine = parseInt(fineMatch[1].replace(/\D/g, ''));
+        }
+
         return lim;
     }
 
     async function load() {
-        const res = await fetch('tresty.html?v=' + Date.now());
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        laws = Array.from(doc.querySelectorAll('.law-item')).map(item => ({
-            id: item.id || 'L' + Math.random().toString(36).substr(2, 5),
-            title: item.getAttribute('data-title'),
-            subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                const l = getHardLimits(line.innerText);
-                return {
-                    html: line.innerHTML, text: line.innerText,
-                    defJ: l.life ? 99 : (l.hasJ ? l.jail : 0),
-                    defF: l.hasF ? l.fine : 0,
-                    hasJ: l.hasJ, hasF: l.hasF, isLife: l.life
-                };
-            })
-        }));
-        render();
+        try {
+            const res = await fetch('tresty.html?v=' + Date.now());
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            laws = Array.from(doc.querySelectorAll('.law-item')).map(item => ({
+                id: item.id || 'L' + Math.random().toString(36).substr(2, 5),
+                title: item.getAttribute('data-title'),
+                subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
+                    const l = getHardLimits(line.innerText);
+                    return {
+                        html: line.innerHTML, text: line.innerText,
+                        defJ: l.jail, defF: l.fine,
+                        hasJ: l.hasJ, hasF: l.hasF, isLife: l.life
+                    };
+                })
+            }));
+            render();
+        } catch(e) { console.error("Chyba načítání:", e); }
     }
 
     function render() {
@@ -142,7 +154,7 @@
 
     function preCheck(lIdx, sIdx) {
         const sub = laws[lIdx].subs[sIdx];
-        const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value);
+        const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
         if (sub.text.includes("ODEBRAT")) {
             showModal("ODEBRÁNÍ PRŮKAZU", "Tento čin vyžaduje odebrání příslušného průkazu. Je hotovo?", () => {
@@ -166,13 +178,12 @@
     }
 
     function add(lIdx, sIdx) {
-        const sub = laws[lIdx].subs[sIdx];
         const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
         
         protocol.push({ 
             id: Date.now(), lawId: laws[lIdx].id, title: laws[lIdx].title, 
-            sub: sub.text, jail, fine, isLife: jail >= 99 
+            sub: laws[lIdx].subs[sIdx].text, jail, fine, isLife: jail >= 99 
         });
         updateProtocol();
         closeModal();
