@@ -52,8 +52,8 @@
         <h1 id="modalIcon" style="font-size: 60px; margin: 15px 0;">🚫</h1>
         <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">ZÁKAZ</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 17px; margin-bottom: 30px;"></p>
-        <button id="modalNextBtn" style="background:var(--danger); color:#fff; border:none; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px; margin-right:10px;">POTVRDIT</button>
-        <button onclick="closeModal()" style="background:transparent; color:#fff; border:1px solid #444; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px;">ZRUŠIT</button>
+        <button id="modalNextBtn" style="background:var(--danger); color:#fff; border:none; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px; margin-right:10px;">ANO</button>
+        <button onclick="closeModal()" style="background:transparent; color:#fff; border:1px solid #444; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px;">NE</button>
     </div>
 </div>
 
@@ -173,19 +173,19 @@
         }
 
         if (valJ > sub.maxJ && sub.maxJ !== 999 && sub.maxJ !== 99) {
-            showModal("NADMAXIMÁLNÍ TREST", `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se SZ!`, () => closeModal(), "🚫");
+            showModal("NADMAXIMÁLNÍ TREST", `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se Státním Zastupcem!`, () => closeModal(), "🚫");
             return;
         }
 
         if (sub.isZP || sub.isRP) {
-            showModal("DOKLADY", "Odeberte zbrojní/řidičský průkaz!", () => validateSZ(lIdx, sIdx, valJ), "⚠️");
+            showModal("DOKLADY", "Odeberte zbrojní/řidičský průkaz! A zárověn to zablokuj v MDT!", () => validateSZ(lIdx, sIdx, valJ), "⚠️");
         } else { validateSZ(lIdx, sIdx, valJ); }
     }
 
     function validateSZ(lIdx, sIdx, valJ) {
         const sub = laws[lIdx].subs[sIdx];
         if (sub.isLife || valJ > 20) {
-            showModal("STÁTNÍ ZÁSTUPCE", `Trest přesahuje 20 let. Je SZ přítomen?`, () => add(lIdx, sIdx), "⚖️");
+            showModal("STÁTNÍ ZÁSTUPCE", `Trest přesahuje 20 let. Je Státní Zástupce přítomen?`, () => add(lIdx, sIdx), "⚖️");
         } else { add(lIdx, sIdx); }
     }
 
@@ -213,7 +213,7 @@
         });
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card">
-                <b>${p.title}</b> ${p.zp ? '<span class="badge">ZP</span>' : ''}${p.rp ? '<span class="badge">ŘP</span>' : ''}
+                <b>${p.title}</b> ${p.zp ? '<span class="badge">Zbrojní Průkaz</span>' : ''}${p.rp ? '<span class="badge">Řidičský Průkaz</span>' : ''}
                 <span class="sub-full-text">${p.fullText}</span>
                 <div style="font-size:22px; font-weight:900; margin-top:12px; color:var(--accent); text-align:right;">
                     ${p.isLife?'DOŽIVOTÍ':p.jail+' LET'} | $${p.fine.toLocaleString()}
@@ -222,7 +222,7 @@
             </div>
         `).join('');
         document.getElementById('courtAlert').style.display = needSZ ? 'block' : 'none';
-        document.getElementById('sumJail').innerText = hasLife ? 'INF' : totalJ;
+        document.getElementById('sumJail').innerText = hasLife ? 'DOŽIVOTÍ' : totalJ;
         document.getElementById('sumFine').innerText = protocol.reduce((a,b)=>a+b.fine, 0).toLocaleString();
     }
 </script>
