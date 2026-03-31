@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v137</title>
+    <title>SASP MDT - TERMINÁL v138</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -24,15 +24,14 @@
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
         .law-description { flex: 1; font-size: 14px; color: #eee; line-height: 1.4; }
         
-        /* OPRAVENÁ VIDITELNOST TEXTU */
+        /* POLE JSOU VŽDY VIDĚT, ALE ZAMKNUTÁ MAJÍ JINÝ STYL */
         .input-box { background: #000; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 90px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
-        .input-box:focus { border-color: var(--accent); }
-        .input-box:disabled { visibility: hidden; pointer-events: none; }
+        .input-box:disabled { opacity: 0.3; background: #050505; cursor: not-allowed; border-color: #111; }
         
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; border-left: 4px solid var(--accent); }
         .prot-header { color: var(--accent); font-weight: 900; cursor: pointer; display: block; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; text-decoration: underline; }
         
-        /* MODÁL PRO SEKVENČNÍ VAROVÁNÍ */
+        /* MODÁL - VAROVÁNÍ BEZE ZMĚN */
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; box-shadow: 0 0 50px rgba(255,0,0,0.2); }
         
@@ -58,7 +57,7 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:20px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Hledat v Penal Code..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:20px;"></div>
     </div>
@@ -85,13 +84,13 @@
 
     function getHardLimits(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
-        // Detekce vězení
-        const hasJ = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || clean.includes("doživotí");
-        // Detekce pokuty
+        const hasLife = clean.includes("doživotí");
+        const hasJ = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || hasLife;
         const hasF = clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit");
         
-        let limits = { jailMin: 0, jailMax: 0, fineMax: 0, life: clean.includes("doživotí"), hasJail: hasJ, hasFine: hasF, isOptional: clean.includes("nebo") };
+        let limits = { jailMin: 0, jailMax: 0, fineMax: 0, life: hasLife, hasJail: hasJ, hasFine: hasF };
         
+        // Detekce let
         const rangeMatch = clean.match(/od\s+(\d+)\s+(?:let|roku|roků)?\s*(?:do|až)\s+(\d+)\s+let/i) || clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i);
         if (rangeMatch) { limits.jailMin = parseInt(rangeMatch[1]); limits.jailMax = parseInt(rangeMatch[2]); }
         else {
@@ -99,11 +98,10 @@
             if (singleMatch) { limits.jailMax = parseInt(singleMatch[1]); }
         }
         
-        const fineMatches = clean.match(/do\s*(\d[\d\s]*)\s*\$/i) || clean.match(/(\d[\d\s]*)\s*\$/g);
-        if(fineMatches) {
-            const vals = Array.isArray(fineMatches) ? fineMatches.map(m => parseInt(m.replace(/\D/g, ''))) : [parseInt(fineMatches[1].replace(/\D/g, ''))];
-            limits.fineMax = Math.max(...vals);
-        }
+        // Detekce pokuty
+        const fineMatch = clean.match(/do\s*(\d[\d\s]*)\s*\$/i);
+        if(fineMatch) { limits.fineMax = parseInt(fineMatch[1].replace(/\D/g, '')); }
+
         return limits;
     }
 
@@ -118,7 +116,9 @@
                 const lim = getHardLimits(line.innerText);
                 return {
                     html: line.innerHTML, text: line.innerText,
-                    valJ: line.getAttribute('data-fix-jail') || "", valF: line.getAttribute('data-fix-fine') || "",
+                    // PŘEDVYPLNĚNÍ HODNOT
+                    defJ: lim.life ? 999 : (lim.jailMax || ""),
+                    defF: lim.fineMax || "",
                     hasJ: lim.hasJail, hasF: lim.hasFine
                 };
             })
@@ -135,8 +135,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="Roky" ${!sub.hasJ?'disabled':''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="Pokuta" ${!sub.hasF?'disabled':''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.defJ}" placeholder="J" ${!sub.hasJ?'disabled':''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.defF}" placeholder="$" ${!sub.hasF?'disabled':''}>
                             <button class="add-btn" onclick="checkStep1(${lIdx}, ${sIdx})">+</button>
                         </div>
                     `).join('')}
@@ -150,7 +150,7 @@
         if (sub.text.includes("ODEBRAT")) {
             document.getElementById('modalStep').innerText = "KROK 1/2";
             document.getElementById('modalTitle').innerText = "ODEBRAT PRŮKAZ";
-            document.getElementById('modalMsg').innerText = "Tento čin vyžaduje odebrání příslušného průkazu (Zbrojní / Řidičský). Máte hotovo?";
+            document.getElementById('modalMsg').innerText = "Tento čin vyžaduje odebrání příslušného průkazu. Máte fyzicky odebráno?";
             document.getElementById('modalOverlay').style.display = 'flex';
             document.getElementById('modalNextBtn').onclick = () => checkStep2(lIdx, sIdx);
         } else {
@@ -160,8 +160,8 @@
 
     function checkStep2(lIdx, sIdx) {
         document.getElementById('modalStep').innerText = "KROK 2/2";
-        document.getElementById('modalTitle').innerText = "POTVRZENÍ ZÁZNAMU";
-        document.getElementById('modalMsg').innerText = "Potvrďte, že jste odebrání průkazu zapsal do poznámky v kartě občana.";
+        document.getElementById('modalTitle').innerText = "POTVRZENÍ";
+        document.getElementById('modalMsg').innerText = "Zapsal jste odebrání průkazu do poznámky v databázi občana?";
         document.getElementById('modalNextBtn').onclick = () => { add(lIdx, sIdx); closeModal(); };
     }
 
@@ -169,31 +169,37 @@
         const sub = laws[lIdx].subs[sIdx];
         const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
-        const lim = getHardLimits(sub.text);
-
-        if (jail === 0 && fine === 0) return;
         
-        if (lim.jailMin > 0 && jail < lim.jailMin && !(lim.isOptional && fine > 0)) return;
-        if (lim.jailMax > 0 && jail > lim.jailMax && !lim.life) return;
-
-        protocol.push({ id: Date.now(), lawId: laws[lIdx].id, title: laws[lIdx].title, sub: sub.text, jail, fine, minJ: lim.jailMin, life: lim.life });
+        protocol.push({ 
+            id: Date.now(), 
+            lawId: laws[lIdx].id, 
+            title: laws[lIdx].title, 
+            sub: sub.text, 
+            jail, 
+            fine,
+            isLife: jail === 999 
+        });
         updateProtocol();
     }
 
     function updateProtocol() {
-        const totalJ = protocol.reduce((a, b) => a + b.jail, 0);
-        const totalMin = protocol.reduce((a, b) => a + b.minJ, 0);
+        const totalJ = protocol.reduce((a, b) => a + (b.jail === 999 ? 0 : b.jail), 0);
+        const hasLife = protocol.some(p => p.isLife);
+
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card">
                 <span class="prot-header" onclick="document.getElementById('${p.lawId}').scrollIntoView({behavior:'smooth'})">${p.title}</span>
                 <span style="font-size:11px; opacity:0.6; display:block;">${p.sub}</span>
-                <div style="font-size:24px; font-weight:900; margin-top:5px;">${p.jail} J | $${p.fine.toLocaleString()}</div>
+                <div style="font-size:24px; font-weight:900; margin-top:5px;">
+                    ${p.jail === 999 ? 'DOŽIVOTÍ' : p.jail + ' J'} | $${p.fine.toLocaleString()}
+                </div>
                 <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
             </div>
         `).join('');
-        document.getElementById('courtAlert').style.display = (totalMin > 20 || protocol.some(p => p.life)) ? 'block' : 'none';
+
+        document.getElementById('courtAlert').style.display = (totalJ > 20 || hasLife) ? 'block' : 'none';
         document.getElementById('maxAlert').style.display = totalJ > 80 ? 'block' : 'none';
-        document.getElementById('sumJail').innerText = totalJ;
+        document.getElementById('sumJail').innerText = hasLife ? 'INF' : totalJ;
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
     }
 
