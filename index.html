@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v143</title>
+    <title>SASP MDT - TERMINÁL v144</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -26,7 +26,7 @@
         .law-description { flex: 1; font-size: 14px; color: #eee; }
         
         .input-box { background: #000; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 85px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
-        .input-box:disabled { opacity: 0.05; cursor: not-allowed; border-color: #111; color: transparent !important; }
+        .input-box:disabled { opacity: 0.05; cursor: not-allowed; border-color: #111; }
         
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 300000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; }
@@ -39,7 +39,7 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v143</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v144</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT DO SYSTÉMU</button>
 </div>
 
@@ -83,33 +83,14 @@
     function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
-    function getHardLimits(text) {
+    function getTrestAvailability(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
         const hasLife = clean.includes("doživotí");
-        // Striktní detekce existence trestu
-        const hasJ = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || hasLife;
-        const hasF = clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit");
-        
-        let lim = { jail: "", fine: "", life: hasLife, hasJ, hasF };
-        
-        if (hasJ) {
-            if (hasLife) { lim.jail = 99; }
-            else {
-                const range = clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i) || clean.match(/od\s+(\d+)\s+(?:let|roku|roků)?\s*(?:do|až)\s+(\d+)\s+let/i);
-                if (range) lim.jail = parseInt(range[2]);
-                else {
-                    const single = clean.match(/(\d+)\s+let/i) || clean.match(/sazba\s+(\d+)/i);
-                    if (single) lim.jail = parseInt(single[1]);
-                }
-            }
-        }
-        
-        if (hasF) {
-            const fineMatch = clean.match(/do\s*(\d[\d\s]*)\s*\$/i) || clean.match(/výši\s*(\d[\d\s]*)\s*\$/i);
-            if(fineMatch) lim.fine = parseInt(fineMatch[1].replace(/\D/g, ''));
-        }
-
-        return lim;
+        return {
+            hasJ: clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || hasLife,
+            hasF: clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit"),
+            maxJ: (clean.match(/(?:do|až)\s+(\d+)\s+let/i) || [0,0])[1] || 999
+        };
     }
 
     async function load() {
@@ -121,16 +102,15 @@
                 id: item.id || 'L' + Math.random().toString(36).substr(2, 5),
                 title: item.getAttribute('data-title'),
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                    const l = getHardLimits(line.innerText);
+                    const avail = getTrestAvailability(line.innerText);
                     return {
                         html: line.innerHTML, text: line.innerText,
-                        defJ: l.jail, defF: l.fine,
-                        hasJ: l.hasJ, hasF: l.hasF, isLife: l.life
+                        hasJ: avail.hasJ, hasF: avail.hasF, maxJ: parseInt(avail.maxJ)
                     };
                 })
             }));
             render();
-        } catch(e) { console.error("Chyba načítání:", e); }
+        } catch(e) { console.error(e); }
     }
 
     function render() {
@@ -142,8 +122,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.defJ}" placeholder="皿" ${!sub.hasJ?'disabled':''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.defF}" placeholder="$" ${!sub.hasF?'disabled':''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="" placeholder="皿" ${!sub.hasJ?'disabled':''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="" placeholder="$" ${!sub.hasF?'disabled':''}>
                             <button class="add-btn" onclick="preCheck(${lIdx}, ${sIdx})">+</button>
                         </div>
                     `).join('')}
@@ -157,13 +137,15 @@
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
         if (sub.text.includes("ODEBRAT")) {
-            showModal("ODEBRÁNÍ PRŮKAZU", "Tento čin vyžaduje odebrání příslušného průkazu. Je hotovo?", () => {
+            showModal("ODEBRÁNÍ PRŮKAZU", "Tento čin vyžaduje odebrání průkazu. Máte hotovo?", () => {
                 showModal("ZÁZNAM", "Byl záznam o odebrání zapsán v kartě občana?", () => add(lIdx, sIdx), "2/2");
             }, "1/2");
         } else if (valJ >= 99) {
-            showModal("DOŽIVOTNÍ TREST", "Pozor, udělujete DOŽIVOTÍ. Máte k tomu oprávnění?", () => {
-                showModal("SOUDNÍ SOUHLAS", "Byl u tohoto rozsudku přítomen SZ nebo Soudce?", () => add(lIdx, sIdx), "2/2");
+            showModal("DOŽIVOTNÍ TREST", "Udělujete doživotní sazbu. Máte k tomu oprávnění?", () => {
+                showModal("SOUDNÍ SOUHLAS", "Potvrďte, že byl přítomen SZ nebo Soudce.", () => add(lIdx, sIdx), "2/2");
             }, "1/2");
+        } else if (valJ > sub.maxJ && sub.maxJ !== 999) {
+            showModal("SOUDNÍ ŘÍZENÍ", `Trest nad horní hranici zákona (${sub.maxJ} let) vyžaduje SZ / Soud. Chcete pokračovat?`, () => add(lIdx, sIdx), "VYJÍMKA");
         } else {
             add(lIdx, sIdx);
         }
