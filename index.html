@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v127</title>
+    <title>SASP MDT - TERMINÁL v128</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -30,7 +30,7 @@
         
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; }
         .prot-header { color: var(--accent); font-weight: 900; cursor: pointer; display: block; margin-bottom: 5px; font-size: 14px; text-decoration: underline; text-decoration-color: transparent; }
-        .prot-sub { color: #fff; font-size: 12px; display: block; opacity: 0.8; margin-bottom: 8px; line-height: 1.4; }
+        .prot-sub { color: #fff; font-size: 12px; display: block; opacity: 0.8; margin-bottom: 8px; }
         
         .status-bar { color: white; padding: 12px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; font-size: 11px; }
     </style>
@@ -40,9 +40,9 @@
 <div id="modalOverlay">
     <div class="modal-box">
         <h1 style="font-size: 80px; margin: 0;">⚖️</h1>
-        <h2 id="modalTitle" style="color:#fff;">SOUDNÍ ŘÍZENÍ</h2>
+        <h2 id="modalTitle" style="color:#fff;">PORUŠENÍ SAZBY</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px; line-height: 1.5;"></p>
-        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 50px; font-weight: 900; cursor:pointer; border-radius:5px;">UPRAVIT</button>
+        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 50px; font-weight: 900; cursor:pointer; border-radius:5px;">UPRAVIT TREST</button>
     </div>
 </div>
 
@@ -53,14 +53,13 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:20px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="render()" style="width:100%; padding:14px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Hledat..." oninput="render()" style="width:100%; padding:14px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:20px; scroll-behavior: smooth;"></div>
     </div>
 
     <div id="rightPanel">
-        <div style="padding:15px; background:#000; font-size:11px; color:#555; font-weight: 900;">AKTIVNÍ PROTOKOL</div>
-        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ KONTAKTOVAT SZ / SOUD (VÝJIMEČNÝ TREST)</div>
+        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ NUTNO VOLAT SZ / SOUD</div>
         <div id="maxAlert" class="status-bar" style="background:var(--danger);">🚫 LIMIT MDT PŘEKROČEN</div>
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
         
@@ -90,31 +89,33 @@
         }
     }
 
+    // VYLEPŠENÁ LOGIKA ČTENÍ ROZMEZÍ
     function getHardLimits(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
-        let limits = { jail: 0, fine: 0, minJ: 0, life: clean.includes("doživotí") };
+        let limits = { jailMin: 0, jailMax: 0, fineMax: 0, life: clean.includes("doživotí") };
         
-        // Hledání jail limitů
-        const jailMatches = clean.match(/(\d+)\s*(?:[-–]|až|do)\s*(\d+)\s*let/);
-        if(jailMatches) {
-            limits.minJ = parseInt(jailMatches[1]);
-            limits.jail = parseInt(jailMatches[2]);
+        // Hledání rozmezí: "od X let do Y let" nebo "X-Y let"
+        const rangeMatch = clean.match(/od\s+(\d+)\s+(?:let|roku|roků)?\s*(?:do|až)\s+(\d+)\s+let/i) || clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i);
+        
+        if (rangeMatch) {
+            limits.jailMin = parseInt(rangeMatch[1]);
+            limits.jailMax = parseInt(rangeMatch[2]);
         } else {
-            const singleJail = clean.match(/(\d+)\s*let/);
-            if(singleJail) {
-                // Pokud je tam doživotí a jen jedno číslo, je to minimum (např. od 20 let po doživotí)
-                if(limits.life) { limits.minJ = parseInt(singleJail[1]); limits.jail = 80; }
-                else { limits.jail = parseInt(singleJail[1]); }
+            // Pokud není rozmezí, hledáme jedno číslo u slova let
+            const singleMatch = clean.match(/(\d+)\s+let/i);
+            if (singleMatch) {
+                if (limits.life) { limits.jailMin = parseInt(singleMatch[1]); limits.jailMax = 80; }
+                else { limits.jailMax = parseInt(singleMatch[1]); }
             }
         }
 
-        // Pokud je doživotí ale nenašli jsme minimum, dáme default 20
-        if(limits.life && limits.minJ === 0) limits.minJ = 20;
+        // Pokud je doživotí bez čísel
+        if (limits.life && limits.jailMin === 0) limits.jailMin = 20;
 
         const fineMatches = clean.match(/(\d[\d\s]*)\s*\$/g);
         if(fineMatches) {
             const vals = fineMatches.map(m => parseInt(m.replace(/\D/g, '')));
-            limits.fine = Math.max(...vals);
+            limits.fineMax = Math.max(...vals);
         }
         return limits;
     }
@@ -145,8 +146,8 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="J" ${sub.isFixJ?'disabled':''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${sub.isFixF?'disabled':''}>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="J">
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$">
                             <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:10px 18px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
                         </div>
                     `).join('')}
@@ -159,29 +160,27 @@
         const sub = laws[lIdx].subs[sIdx];
         const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
-        const limits = getHardLimits(sub.text);
+        const lim = getHardLimits(sub.text);
 
-        // KONTROLA MINIMA U DOŽIVOTÍ / VÝJIMEČNÝCH TRESTŮ
-        if (limits.life || limits.minJ >= 20) {
-            if (jail < limits.minJ) {
-                return showAlert("NÍZKÁ SAZBA", `Minimální sazba pro tento výjimečný trest je ${limits.minJ} let. Nutno se obrátit na SZ / Soud!`);
-            }
+        // KONTROLA MINIMA (PRO VŠECHNY TRESTY S ROZMEZÍM)
+        if (lim.jailMin > 0 && jail < lim.jailMin) {
+            return showAlert("PŘÍLIŠ NÍZKÝ TREST", `Minimální sazba pro tento čin je ${lim.jailMin} let. Nutno se obrátit na Státního zástupce / Soud!`);
         }
 
-        // STANDARDNÍ HORNÍ LIMIT
-        if (!sub.isFixJ && limits.jail > 0 && jail > limits.jail && !limits.life) {
-            return showAlert("PŘEKROČENÍ SAZBY", `Maximální sazba je ${limits.jail} let. Pro vyšší trest kontaktujte SZ / Soud.`);
+        // KONTROLA MAXIMA
+        if (lim.jailMax > 0 && jail > lim.jailMax && !lim.life) {
+            return showAlert("PŘEKROČENÍ SAZBY", `Maximální sazba pro tento čin je ${lim.jailMax} let. Nutno se obrátit na Státního zástupce / Soud!`);
         }
 
-        if (!sub.isFixF && limits.fine > 0 && fine > limits.fine) {
-            return showAlert("LIMIT POKUTY", `Maximální pokuta je $${limits.fine.toLocaleString()}.`);
+        if (lim.fineMax > 0 && fine > lim.fineMax) {
+            return showAlert("LIMIT POKUTY", `Maximální pokuta je $${lim.fineMax.toLocaleString()}.`);
         }
 
-        if (limits.life) showAlert("INFO: SZ/SOUD", "Tento čin obsahuje doživotí. Případ musí být postoupen Státnímu zástupci.");
+        if (lim.life) showAlert("INFO: SZ/SOUD", "Tento čin obsahuje doživotí. Případ musí převzít Státní zástupce!");
 
         protocol.push({ 
             id: Date.now(), lawId: laws[lIdx].id, parentTitle: laws[lIdx].title, 
-            subText: sub.text, jail, fine, minJ: limits.minJ, life: limits.life 
+            subText: sub.text, jail, fine, minJ: lim.jailMin, life: lim.life 
         });
         updateProtocol();
     }
@@ -195,7 +194,7 @@
                 <span class="prot-header" onclick="scrollToLaw('${p.lawId}')">${p.parentTitle}</span>
                 <span class="prot-sub">${p.subText}</span>
                 <div style="font-size:24px; font-weight:900;">${p.jail} J | $${p.fine.toLocaleString()}</div>
-                <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:20px;">✕</button>
+                <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
             </div>
         `).join('');
 
