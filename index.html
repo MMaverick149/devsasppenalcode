@@ -2,8 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-    <title>SASP MDT - TERMINÁL v150</title>
+    <title>SASP MDT - TERMINÁL v151</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -23,7 +22,7 @@
         .law-item { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #16181d; overflow: hidden; scroll-margin-top: 20px; }
         .law-category-header { padding: 15px; background: #1c1f24; color: var(--accent); font-weight: 900; cursor: pointer; border-bottom: 1px solid var(--border); text-transform: uppercase; }
         
-        .law-content { padding: 10px; display: block; background: #111317; }
+        .law-content { padding: 10px; display: none; background: #111317; } /* Defaultně zavřené pro přehlednost */
         .row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #1a1c20; }
         .law-description { flex: 1; font-size: 14px; color: #eee; line-height: 1.4; }
         
@@ -42,15 +41,15 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v150</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v151</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT DO SYSTÉMU</button>
 </div>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">SYSTÉMOVÉ HLÁŠENÍ</h3>
+        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">SYSTÉM</h3>
         <h1 id="modalIcon" style="font-size: 60px; margin: 15px 0;">⚠️</h1>
-        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">UPOZORNĚNÍ</h2>
+        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">VAROVÁNÍ</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 17px; margin-bottom: 30px;"></p>
         <button id="modalNextBtn" style="background:var(--danger); color:#fff; border:none; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px; margin-right:10px;">POTVRDIT</button>
         <button onclick="closeModal()" style="background:transparent; color:#fff; border:1px solid #444; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px;">ZRUŠIT</button>
@@ -60,7 +59,7 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:15px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Hledat paragraf..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:15px; flex-grow: 1;"></div>
     </div>
@@ -93,23 +92,27 @@
         
         laws = Array.from(doc.querySelectorAll('.law-item')).map(item => {
             const title = item.getAttribute('data-title');
-            let subs = [];
+            let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
 
-            // Speciální přepsání pro §7 - Fixní definice pro jistotu
+            // RADIKÁLNÍ FIXACE PRO §7
             if (title.includes('§7')) {
-                subs = [
-                    parseSub("a) neúmyslně a zbraní sazbą 1-5 let", "a) neúmyslně a zbraní <b class='highlight'>sazba 1-5 let</b>"),
-                    parseSub("b) úmyslně a zbraní sazbą 1-5 let", "b) úmyslně a zbraní <b class='highlight'>sazba 1-5 let</b>"),
-                    parseSub("c) úmyslně a zbraní střelnou sazbą 3-10 let", "c) úmyslně a zbraní střelnou <b class='highlight'>sazba 3-10 let</b>"),
-                    parseSub("d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz", "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"),
-                    parseSub("e) úmyslně a zbraní proti členům záchranných složek při výkonu povolání je trestný čin, který se trestá odnětím svobody od 10 let do 20 let. ODEBRAT Zbrojní Průkaz", "e) úmyslně a zbraní proti členům záchranných složek při výkonu povolání je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 10 let do 20 let</b>. ODEBRAT Zbrojní Průkaz")
-                ];
-            } 
-            else if (title.includes('§11')) {
-                subs = [parseSub("Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz", "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz")];
+                subs = subs.map(s => {
+                    if (s.text.toLowerCase().includes('d)')) {
+                        return parseSub(
+                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz",
+                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"
+                        );
+                    }
+                    return s;
+                });
             }
-            else {
-                subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+
+            // RADIKÁLNÍ FIXACE PRO §11
+            if (title.includes('§11')) {
+                subs = [parseSub(
+                    "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz",
+                    "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz"
+                )];
             }
 
             return { id: item.id || 'L' + Math.random().toString(36).substr(2, 5), title: title, subs: subs };
@@ -119,7 +122,6 @@
 
     function parseSub(raw, html) {
         const txt = raw.toLowerCase();
-        // Extrakce min/max let
         const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+|doživotí)/i);
         const singleMatch = txt.match(/(?:sazba|do)\s+(\d+)\s+let/i);
         
@@ -145,7 +147,7 @@
         const search = document.getElementById('searchInput').value.toLowerCase();
         document.getElementById('lawsContainer').innerHTML = laws.filter(l => l.title.toLowerCase().includes(search)).map((law, lIdx) => `
             <div class="law-item" id="${law.id}">
-                <div class="law-category-header" onclick="const c=this.nextElementSibling; c.style.display=c.style.display==='none'?'block':'none'">${law.title}</div>
+                <div class="law-category-header" onclick="toggleLaw(this)">${law.title}</div>
                 <div class="law-content">
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
@@ -160,29 +162,32 @@
         `).join('');
     }
 
+    function toggleLaw(el) {
+        const content = el.nextElementSibling;
+        content.style.display = (content.style.display === 'block') ? 'none' : 'block';
+    }
+
     function checkAll(lIdx, sIdx) {
         const sub = laws[lIdx].subs[sIdx];
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
-        // Kontrola minimální hranice
         if (valJ < sub.minJ && valJ !== 0) {
-            showModal("PORUŠENÍ ZÁKONA", `Tento čin má zákonnou sazbu MINIMÁLNĚ ${sub.minJ} let. Zadejte správnou hodnotu.`, () => closeModal(), "BLOKOVÁNO");
+            showModal("MINIMÁLNÍ SAZBA", `Zákon vyžaduje u tohoto činu minimálně ${sub.minJ} let. Opravte hodnotu.`, () => closeModal(), "STOP");
             return;
         }
 
-        // Kontrola průkazů
         if (sub.isZP || sub.isRP) {
-            let list = (sub.isZP ? "ZBROJNÍ " : "") + (sub.isRP ? "ŘIDIČSKÝ " : "");
-            showModal("ODEBRÁNÍ PRŮKAZU", `Zákon vyžaduje odebrat: ${list}. Máte hotovo?`, () => validateFinal(lIdx, sIdx, valJ), "PRŮKAZY");
-        } else { validateFinal(lIdx, sIdx, valJ); }
+            let msg = "Tento čin vyžaduje odebrání: " + (sub.isZP ? "ZBROJNÍ " : "") + (sub.isRP ? "ŘIDIČSKÝ " : "") + "průkaz. Máte hotovo?";
+            showModal("ODEBRÁNÍ PRŮKAZU", msg, () => validateLife(lIdx, sIdx, valJ), "PRŮKAZY");
+        } else { validateLife(lIdx, sIdx, valJ); }
     }
 
-    function validateFinal(lIdx, sIdx, valJ) {
+    function validateLife(lIdx, sIdx, valJ) {
         const sub = laws[lIdx].subs[sIdx];
         if (sub.isLife || valJ >= 99) {
-            showModal("DOŽIVOTÍ", "Potvrďte udělení doživotního trestu. Je přítomen SZ/Soudce?", () => add(lIdx, sIdx), "SOUD");
+            showModal("DOŽIVOTÍ", "Udělujete doživotní trest. Je přítomen SZ/Soudce?", () => add(lIdx, sIdx), "SOUD");
         } else if (valJ > sub.maxJ && sub.maxJ !== 999) {
-            showModal("PŘEKROČENÍ MAXIMA", `Trest ${valJ} let překračuje limit ${sub.maxJ} let. Vyžaduje SZ/Soudce!`, () => add(lIdx, sIdx), "SOUD");
+            showModal("PŘEKROČENÍ LIMITU", `Trest ${valJ} let je nad maximem ${sub.maxJ} let. Vyžaduje SZ/Soudce!`, () => add(lIdx, sIdx), "SOUD");
         } else { add(lIdx, sIdx); }
     }
 
@@ -193,8 +198,6 @@
         document.getElementById('modalOverlay').style.display = 'flex';
         document.getElementById('modalNextBtn').onclick = onNext;
     }
-
-    function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
     function add(lIdx, sIdx) {
         const j = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
@@ -212,7 +215,7 @@
         let totalJ = 0; let hasLife = false;
         protocol.forEach(p => { if(p.isLife) hasLife = true; else totalJ += p.jail; });
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
-            <div class="protocol-card" onclick="document.getElementById('${p.lawId}').scrollIntoView({behavior:'smooth'})">
+            <div class="protocol-card" onclick="const e=document.getElementById('${p.lawId}'); e.scrollIntoView({behavior:'smooth'}); e.querySelector('.law-content').style.display='block';">
                 <b>${p.title}</b>
                 ${p.zp ? '<span class="badge">ZP</span>' : ''}${p.rp ? '<span class="badge">ŘP</span>' : ''}
                 <div style="font-size:20px; font-weight:900; margin-top:8px;">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
