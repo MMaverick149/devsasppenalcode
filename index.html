@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v155</title>
+    <title>SASP MDT - TERMINÁL v156</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -42,15 +42,15 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v155</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v156</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">SPUSTIT SYSTÉM</button>
 </div>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">SYSTÉMOVÁ KONTROLA</h3>
+        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 12px; letter-spacing: 2px;">KONTROLA ZÁKONNOSTI</h3>
         <h1 id="modalIcon" style="font-size: 60px; margin: 15px 0;">🚫</h1>
-        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">ZAMÍTNUTO</h2>
+        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">ZÁKAZ</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 17px; margin-bottom: 30px;"></p>
         <button id="modalNextBtn" style="background:var(--danger); color:#fff; border:none; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px; margin-right:10px;">POTVRDIT</button>
         <button onclick="closeModal()" style="background:transparent; color:#fff; border:1px solid #444; padding:15px 35px; font-weight: 900; cursor:pointer; border-radius: 5px;">ZRUŠIT</button>
@@ -60,20 +60,20 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:15px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Hledat zákon..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Hledat..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:15px; flex-grow: 1;"></div>
     </div>
 
     <div id="rightPanel">
-        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ PŘÍTOMNOST STÁTNÍHO ZÁSTUPCE NUTNÁ</div>
+        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ PŘÍTOMNOST SZ NUTNÁ</div>
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto; padding: 10px;"></div>
         <div style="padding:25px; background:#0a0b0d; border-top:2px solid var(--border);">
             <div style="display:flex; justify-content:space-between; font-size:22px; font-weight:900; margin-bottom: 15px;">
                 <span>CELKEM:</span>
                 <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
             </div>
-            <button onclick="protocol=[]; update();" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; border-radius:5px; cursor:pointer;">VYMAZAT PŘÍPAD</button>
+            <button onclick="protocol=[]; update();" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; border-radius:5px; cursor:pointer;">NOVÝ PŘÍPAD</button>
         </div>
     </div>
 </div>
@@ -94,9 +94,28 @@
             const title = item.getAttribute('data-title');
             let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
 
+            // OPRAVA §7 BOD (C) A (D)
             if (title.includes('§7')) {
-                subs = subs.map(s => s.text.toLowerCase().includes('d)') ? parseSub("d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz", "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz") : s);
+                subs = subs.map(s => {
+                    // Bod C - fixace na 3-10 let
+                    if (s.text.toLowerCase().includes('c)')) {
+                        return parseSub(
+                            "c) úmyslně a zbraní střelnou sazba 3-10 let",
+                            "c) úmyslně a zbraní střelnou <b class='highlight'>sazba 3-10 let</b>"
+                        );
+                    }
+                    // Bod D - ponecháno v pořádku
+                    if (s.text.toLowerCase().includes('d)')) {
+                        return parseSub(
+                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá odnětím svobody od 5 let do 15 let. ODEBRAT Zbrojní Průkaz",
+                            "d) úmyslně a zbraní proti úřední osobě je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 5 let do 15 let</b>. ODEBRAT Zbrojní Průkaz"
+                        );
+                    }
+                    return s;
+                });
             }
+
+            // §11 ponecháno beze změn
             if (title.includes('§11')) {
                 subs = [parseSub("Pokus o vraždu: Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz", "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz")];
             }
@@ -107,12 +126,20 @@
 
     function parseSub(raw, html) {
         const txt = raw.toLowerCase();
+        // Detekce sazby X-Y
+        const dashMatch = txt.match(/sazba\s+(\d+)-(\d+)/i);
         const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+|doživotí)/i);
-        const singleMatch = txt.match(/(?:sazba|do)\s+(\d+)\s+let/i);
+        
         let min = 0; let max = 999;
-        if (rangeMatch) { min = parseInt(rangeMatch[1]); max = rangeMatch[2].includes("doživotí") ? 99 : parseInt(rangeMatch[2]); }
-        else if (singleMatch) { max = parseInt(singleMatch[1]); }
-        return { text: raw, html: html, hasJ: txt.includes("let") || txt.includes("doživotí"), hasF: txt.includes("pokut") || txt.includes("$"), isLife: txt.includes("doživotí"), isZP: raw.includes("Zbrojní"), isRP: raw.includes("Řidičský"), minJ: min, maxJ: max };
+        if (dashMatch) {
+            min = parseInt(dashMatch[1]);
+            max = parseInt(dashMatch[2]);
+        } else if (rangeMatch) {
+            min = parseInt(rangeMatch[1]);
+            max = rangeMatch[2].includes("doživotí") ? 99 : parseInt(rangeMatch[2]);
+        }
+
+        return { text: raw, html: html, hasJ: txt.includes("let") || txt.includes("doživotí") || txt.includes("sazba"), hasF: txt.includes("pokut") || txt.includes("$"), isLife: txt.includes("doživotí"), isZP: raw.includes("Zbrojní"), isRP: raw.includes("Řidičský"), minJ: min, maxJ: max };
     }
 
     function render() {
@@ -141,13 +168,12 @@
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         
         if (valJ < sub.minJ && valJ !== 0) {
-            showModal("MINIMUM", `Tento čin vyžaduje aspoň ${sub.minJ} let!`, () => closeModal(), "🚫");
+            showModal("PODMINIMÁLNÍ TREST", `Zákon nepovoluje jít pod ${sub.minJ} let!`, () => closeModal(), "🚫");
             return;
         }
 
-        // STRIKTNÍ LIMIT - ANI SOUD NEMŮŽE VÍC
         if (valJ > sub.maxJ && sub.maxJ !== 999 && sub.maxJ !== 99) {
-            showModal("MAXIMUM", `Sazba tohoto činu je max ${sub.maxJ} let. Více nelze udělit!`, () => closeModal(), "🚫");
+            showModal("NADMAXIMÁLNÍ TREST", `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se SZ!`, () => closeModal(), "🚫");
             return;
         }
 
@@ -158,9 +184,8 @@
 
     function validateSZ(lIdx, sIdx, valJ) {
         const sub = laws[lIdx].subs[sIdx];
-        // SZ JEN PŘI 21+ NEBO DOŽIVOTÍ
         if (sub.isLife || valJ > 20) {
-            showModal("STÁTNÍ ZÁSTUPCE", `Trest přesahuje 20 let (nebo doživotí). Je SZ přítomen?`, () => add(lIdx, sIdx), "⚖️");
+            showModal("STÁTNÍ ZÁSTUPCE", `Trest přesahuje 20 let. Je SZ přítomen?`, () => add(lIdx, sIdx), "⚖️");
         } else { add(lIdx, sIdx); }
     }
 
