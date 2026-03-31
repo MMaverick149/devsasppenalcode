@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v117</title>
+    <title>SASP MDT - Penal Code System</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -48,7 +48,7 @@
 <div id="modalOverlay">
     <div class="modal-box">
         <h1 style="color:var(--danger); font-size: 50px; margin:0;">⚠️</h1>
-        <h2 style="color:#fff; margin-bottom: 10px;">NELEGÁLNÍ TREST</h2>
+        <h2 style="color:#fff; margin-bottom: 10px;">NEDOVOLENÝ TREST</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px;"></p>
         <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; border-radius:5px;">OPRAVIT</button>
     </div>
@@ -72,7 +72,7 @@
         <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
             <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:20px; font-size: 20px;">
                 <span>CELKEM:</span>
-                <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
+                <span><span id="sumJail" style="color:var(--info)">0</span> 皿 Věžení | <span id="sumFine" style="color:var(--fine)">0</span> $ Pokuta </span>
             </div>
             <button onclick="resetCase()" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; cursor:pointer; border-radius:5px;">NOVÝ PŘÍPAD / RESET</button>
         </div>
