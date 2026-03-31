@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - Penal Code System</title>
+    <title>SASP MDT - TERMINÁL v118</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -31,7 +31,11 @@
         .input-box { background: #000 !important; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 8px 5px; width: 80px; text-align: center; border-radius: 4px; font-size: 14px; outline: none; }
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; }
-        .warning-bar { color: white; padding: 15px; font-weight: 900; text-align: center; margin: 5px 10px; display: none; border-radius: 4px; font-size: 14px; text-transform: uppercase; }
+        .warning-bar { color: white; padding: 12px; font-weight: 900; text-align: center; margin: 3px 10px; display: none; border-radius: 4px; font-size: 12px; text-transform: uppercase; }
+        
+        /* VAROVÁNÍ VRCHNÍ SOUD */
+        #courtAlert { background: #440000; border: 1px solid red; color: #ff4444; animation: flash 0.5s infinite alternate; }
+        @keyframes flash { from { opacity: 1; } to { opacity: 0.5; } }
     </style>
 </head>
 <body>
@@ -48,9 +52,9 @@
 <div id="modalOverlay">
     <div class="modal-box">
         <h1 style="color:var(--danger); font-size: 50px; margin:0;">⚠️</h1>
-        <h2 style="color:#fff; margin-bottom: 10px;">NEDOVOLENÝ TREST</h2>
+        <h2 style="color:#fff; margin-bottom: 10px;">NELEGÁLNÍ POSTUP</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px;"></p>
-        <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; border-radius:5px;">OPRAVIT</button>
+        <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; border-radius:5px;">ROZUMÍM</button>
     </div>
 </div>
 
@@ -64,6 +68,9 @@
 
     <div id="rightPanel">
         <div style="padding:15px; background:#000; font-size:11px; color:#444; border-bottom:1px solid var(--border);">SASP DIGITAL EVIDENCE SYSTEM</div>
+        
+        <div id="courtAlert" class="warning-bar">⚖️ PŘEDAT VRCHNÍMU SOUDU (NAD 20J)</div>
+        
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
         
         <div id="warnWeapon" class="warning-bar" style="background:var(--danger);">⚠️ ODEBRAT ZBROJNÍ PRŮKAZ</div>
@@ -72,9 +79,9 @@
         <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
             <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:20px; font-size: 20px;">
                 <span>CELKEM:</span>
-                <span><span id="sumJail" style="color:var(--info)">0</span> 皿 Věžení | <span id="sumFine" style="color:var(--fine)">0</span> $ Pokuta </span>
+                <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
             </div>
-            <button onclick="resetCase()" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; cursor:pointer; border-radius:5px;">NOVÝ PŘÍPAD / RESET</button>
+            <button id="resetBtn" onclick="resetCase()" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; cursor:pointer; border-radius:5px;">NOVÝ PŘÍPAD / RESET</button>
         </div>
     </div>
 </div>
@@ -82,6 +89,7 @@
 <script>
     let laws = [];
     let protocol = [];
+    const MAX_PD_JAIL = 20; // Maximální trest, který může dát PD bez soudu
 
     function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
     function showModal(msg) { document.getElementById('modalMsg').innerText = msg; document.getElementById('modalOverlay').style.display = 'flex'; }
@@ -95,29 +103,18 @@
 
     function parseDualLimits(text) {
         const cleanText = text.replace(/\./g, '').toLowerCase();
-        let limits = { jail: { min: 0, max: 0 }, fine: { max: 0 } };
+        let limits = { jail: { min: 0, max: 0 }, fine: { max: 0 }, life: false };
 
-        // 1. Detekce vězení (rozšířeno o "na X let")
+        if (cleanText.includes("doživotí")) limits.life = true;
+
         const jailRange = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)\s*let/);
-        const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*(?:do|na)\s+(\d+)\s+let/); // Opraveno: do | na
-        const jailSazba = cleanText.match(/sazba\s+(\d+)\s*[-–]\s*(\d+)/);
+        const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*(?:do|na)\s+(\d+)\s+let/);
         
-        if (jailRange) {
-            limits.jail.min = parseInt(jailRange[1]);
-            limits.jail.max = parseInt(jailRange[2]);
-        } else if (jailFromTo) {
-            limits.jail.min = parseInt(jailFromTo[1]);
-            limits.jail.max = parseInt(jailFromTo[2]);
-        } else if (jailSazba) {
-            limits.jail.min = parseInt(jailSazba[1]);
-            limits.jail.max = parseInt(jailSazba[2]);
-        }
+        if (jailRange) { limits.jail.min = parseInt(jailRange[1]); limits.jail.max = parseInt(jailRange[2]); }
+        else if (jailFromTo) { limits.jail.min = parseInt(jailFromTo[1]); limits.jail.max = parseInt(jailFromTo[2]); }
 
-        // 2. Detekce pokuty
         const fineMatch = cleanText.match(/(?:trest|pokut).*?(\d+)\s*\$/);
-        if (fineMatch) {
-            limits.fine.max = parseInt(fineMatch[1]);
-        }
+        if (fineMatch) limits.fine.max = parseInt(fineMatch[1]);
 
         return limits;
     }
@@ -131,15 +128,12 @@
                 title: item.getAttribute('data-title'),
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
                     const text = line.innerText;
-                    const fixJ = line.getAttribute('data-fix-jail');
-                    const fixF = line.getAttribute('data-fix-fine');
                     return {
                         html: line.innerHTML, fullText: text,
-                        valJ: fixJ || "", valF: fixF || "",
-                        isFixJ: fixJ !== null, isFixF: fixF !== null,
+                        valJ: line.getAttribute('data-fix-jail') || "", valF: line.getAttribute('data-fix-fine') || "",
+                        isFixJ: line.getAttribute('data-fix-jail') !== null, isFixF: line.getAttribute('data-fix-fine') !== null,
                         limits: parseDualLimits(text),
-                        licW: text.toUpperCase().includes("ZBROJNÍ"), 
-                        licD: text.toUpperCase().includes("ŘIDIČSKÝ")
+                        licW: text.toUpperCase().includes("ZBROJNÍ"), licD: text.toUpperCase().includes("ŘIDIČSKÝ")
                     };
                 })
             }));
@@ -172,18 +166,18 @@
         const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
-        if (jail <= 0 && fine <= 0) { showModal("Trest nesmí být nulový!"); return; }
+        if (jail <= 0 && fine <= 0) return;
         
-        if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
-            if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
-                showModal(`Nelegální délka vězení! Sazba je ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
-                return;
-            }
+        // KONTROLA DOŽIVOTÍ
+        if (sub.limits.life || jail > MAX_PD_JAIL) {
+            showModal("Tento čin spadá pod DOŽIVOTÍ / VRCHNÍ SOUD. PD smí udělit max 20 let. Kontaktujte Admin tým.");
+            if (jail === 0) return; // Pokud je to jen pokuta, pustíme to, ale jail stopneme na limitu
         }
 
-        if (fine > 0 && !sub.isFixF && sub.limits.fine.max > 0) {
-            if (fine > sub.limits.fine.max) {
-                showModal(`Nelegální výše pokuty! Maximální povolená částka je $${sub.limits.fine.max.toLocaleString()}.`);
+        // KONTROLA ZÁKONNÝCH MEZÍ
+        if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
+            if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
+                showModal(`Sazba je ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
                 return;
             }
         }
@@ -193,7 +187,9 @@
     }
 
     function updateProtocol() {
+        const totalJail = protocol.reduce((a, b) => a + b.jail, 0);
         const list = document.getElementById('caseEntries');
+        
         list.innerHTML = protocol.map((p) => `
             <div class="protocol-card">
                 <div style="color:var(--accent); font-weight:900; font-size:14px;">${p.title}</div>
@@ -202,10 +198,18 @@
                 <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:20px;">✕</button>
             </div>
         `).join('');
+
+        // VAROVÁNÍ VRCHNÍ SOUD
+        document.getElementById('courtAlert').style.display = totalJail > MAX_PD_JAIL ? 'block' : 'none';
+        
         document.getElementById('warnWeapon').style.display = protocol.some(p => p.licW) ? 'block' : 'none';
         document.getElementById('warnDriver').style.display = protocol.some(p => p.licD) ? 'block' : 'none';
-        document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
+        
+        document.getElementById('sumJail').innerText = totalJail;
         document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
+        
+        // Pokud je nad limit, změníme barvu součtu jail
+        document.getElementById('sumJail').style.color = totalJail > MAX_PD_JAIL ? 'var(--danger)' : 'var(--info)';
     }
 
     function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
