@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v136</title>
+    <title>SASP MDT - TERMINÁL v137</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -12,7 +12,6 @@
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        /* ŽLUTÉ TUČNÉ PÍSMO - NATVRDO */
         b, strong { color: var(--accent) !important; font-weight: 900; }
 
         #mainApp { display: flex; height: 100vh; width: 100%; }
@@ -25,29 +24,33 @@
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
         .law-description { flex: 1; font-size: 14px; color: #eee; line-height: 1.4; }
         
-        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 10px; width: 90px; text-align: center; border-radius: 4px; font-size: 16px; }
-        /* POKUD POLE NEMÁ BÝT POUŽITO, ZMIZÍ */
-        .input-box:disabled { background: #000 !important; border: 1px solid #000 !important; color: transparent !important; cursor: not-allowed; pointer-events: none; }
+        /* OPRAVENÁ VIDITELNOST TEXTU */
+        .input-box { background: #000; border: 1px solid #333; color: var(--accent) !important; font-weight: 900; padding: 10px; width: 90px; text-align: center; border-radius: 4px; font-size: 16px; outline: none; }
+        .input-box:focus { border-color: var(--accent); }
+        .input-box:disabled { visibility: hidden; pointer-events: none; }
         
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; border-left: 4px solid var(--accent); }
         .prot-header { color: var(--accent); font-weight: 900; cursor: pointer; display: block; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; text-decoration: underline; }
         
+        /* MODÁL PRO SEKVENČNÍ VAROVÁNÍ */
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100000; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 550px; }
+        .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; box-shadow: 0 0 50px rgba(255,0,0,0.2); }
         
         .status-bar { color: white; padding: 14px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; font-size: 12px; }
+        .add-btn { background: var(--accent); border: none; padding: 10px 20px; font-weight: 900; cursor: pointer; border-radius: 4px; color: #000; }
     </style>
 </head>
 <body>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h1 id="modalIcon" style="font-size: 60px; margin: 0;">⚠️</h1>
-        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase;">VAROVÁNÍ</h2>
+        <h3 id="modalStep" style="color: var(--danger); margin: 0; font-size: 14px; letter-spacing: 2px;">KROK 1/2</h3>
+        <h1 id="modalIcon" style="font-size: 60px; margin: 10px 0;">⚠️</h1>
+        <h2 id="modalTitle" style="color:#fff; text-transform: uppercase; margin-bottom: 10px;">VAROVÁNÍ</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px; line-height: 1.6;"></p>
-        <div id="modalControls">
-            <button id="modalConfirmBtn" style="display:none; background:var(--danger); color:#fff; border:none; padding:15px 30px; font-weight: 900; cursor:pointer; border-radius:5px; margin-right: 10px;">POTVRDIT A POKRAČOVAT</button>
-            <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 30px; font-weight: 900; cursor:pointer; border-radius:5px;">ZAVŘÍT / UPRAVIT</button>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button id="modalNextBtn" style="background:var(--danger); color:#fff; border:none; padding:15px 30px; font-weight: 900; cursor:pointer; border-radius:5px; text-transform: uppercase;">POKRAČOVAT</button>
+            <button onclick="closeModal()" style="background:transparent; color:#fff; border:1px solid #444; padding:15px 30px; font-weight: 900; cursor:pointer; border-radius:5px; text-transform: uppercase;">ZRUŠIT</button>
         </div>
     </div>
 </div>
@@ -77,32 +80,17 @@
 <script>
     let laws = [];
     let protocol = [];
-    let pendingAction = null;
 
-    function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; document.getElementById('modalConfirmBtn').style.display = 'none'; }
-    
-    function showAlert(title, msg, isCritical = false, onConfirm = null) {
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalMsg').innerText = msg;
-        document.getElementById('modalIcon').innerText = isCritical ? "🛑" : "⚠️";
-        
-        if (onConfirm) {
-            const btn = document.getElementById('modalConfirmBtn');
-            btn.style.display = 'inline-block';
-            btn.onclick = () => { onConfirm(); closeModal(); };
-        }
-        
-        document.getElementById('modalOverlay').style.display = 'flex';
-    }
+    function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
 
     function getHardLimits(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
+        // Detekce vězení
+        const hasJ = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || clean.includes("doživotí");
+        // Detekce pokuty
+        const hasF = clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit");
         
-        // ANALÝZA POLÍ
-        const hasJail = clean.includes("let") || clean.includes("roku") || clean.includes("roků") || clean.includes("svobod") || clean.includes("doživotí");
-        const hasFine = clean.includes("pokut") || clean.includes("$") || clean.includes("peněžit");
-        
-        let limits = { jailMin: 0, jailMax: 0, fineMax: 0, life: clean.includes("doživotí"), hasJail, hasFine, isOptional: clean.includes("nebo") };
+        let limits = { jailMin: 0, jailMax: 0, fineMax: 0, life: clean.includes("doživotí"), hasJail: hasJ, hasFine: hasF, isOptional: clean.includes("nebo") };
         
         const rangeMatch = clean.match(/od\s+(\d+)\s+(?:let|roku|roků)?\s*(?:do|až)\s+(\d+)\s+let/i) || clean.match(/(\d+)\s*[-–]\s*(\d+)\s+let/i);
         if (rangeMatch) { limits.jailMin = parseInt(rangeMatch[1]); limits.jailMax = parseInt(rangeMatch[2]); }
@@ -131,7 +119,7 @@
                 return {
                     html: line.innerHTML, text: line.innerText,
                     valJ: line.getAttribute('data-fix-jail') || "", valF: line.getAttribute('data-fix-fine') || "",
-                    hasJail: lim.hasJail, hasFine: lim.hasFine
+                    hasJ: lim.hasJail, hasF: lim.hasFine
                 };
             })
         }));
@@ -147,14 +135,34 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="J" ${!sub.hasJail?'disabled':''}>
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$" ${!sub.hasFine?'disabled':''}>
-                            <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:10px 20px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="Roky" ${!sub.hasJ?'disabled':''}>
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="Pokuta" ${!sub.hasF?'disabled':''}>
+                            <button class="add-btn" onclick="checkStep1(${lIdx}, ${sIdx})">+</button>
                         </div>
                     `).join('')}
                 </div>
             </div>
         `).join('');
+    }
+
+    function checkStep1(lIdx, sIdx) {
+        const sub = laws[lIdx].subs[sIdx];
+        if (sub.text.includes("ODEBRAT")) {
+            document.getElementById('modalStep').innerText = "KROK 1/2";
+            document.getElementById('modalTitle').innerText = "ODEBRAT PRŮKAZ";
+            document.getElementById('modalMsg').innerText = "Tento čin vyžaduje odebrání příslušného průkazu (Zbrojní / Řidičský). Máte hotovo?";
+            document.getElementById('modalOverlay').style.display = 'flex';
+            document.getElementById('modalNextBtn').onclick = () => checkStep2(lIdx, sIdx);
+        } else {
+            add(lIdx, sIdx);
+        }
+    }
+
+    function checkStep2(lIdx, sIdx) {
+        document.getElementById('modalStep').innerText = "KROK 2/2";
+        document.getElementById('modalTitle').innerText = "POTVRZENÍ ZÁZNAMU";
+        document.getElementById('modalMsg').innerText = "Potvrďte, že jste odebrání průkazu zapsal do poznámky v kartě občana.";
+        document.getElementById('modalNextBtn').onclick = () => { add(lIdx, sIdx); closeModal(); };
     }
 
     function add(lIdx, sIdx) {
@@ -164,21 +172,11 @@
         const lim = getHardLimits(sub.text);
 
         if (jail === 0 && fine === 0) return;
+        
+        if (lim.jailMin > 0 && jail < lim.jailMin && !(lim.isOptional && fine > 0)) return;
+        if (lim.jailMax > 0 && jail > lim.jailMax && !lim.life) return;
 
-        // Kontrola licencí
-        if (sub.text.includes("ODEBRAT")) {
-            showAlert("ODEBRÁNÍ PRŮKAZU", `Tento čin obsahuje povinnost ODEBRAT průkaz. Opravdu jste ho odebrali a chcete čin přidat?`, false, () => executeAdd(lIdx, sIdx, jail, fine, lim));
-        } else {
-            executeAdd(lIdx, sIdx, jail, fine, lim);
-        }
-    }
-
-    function executeAdd(lIdx, sIdx, jail, fine, lim) {
-        if (lim.jailMin > 0 && jail < lim.jailMin && !(lim.isOptional && fine > 0)) return showAlert("CHYBA", `Minimální délka trestu je ${lim.jailMin} let.`);
-        if (lim.jailMax > 0 && jail > lim.jailMax && !lim.life) return showAlert("CHYBA", `Maximální délka trestu je ${lim.jailMax} let. Pro vyšší trest volejte SZ.`);
-        if (lim.fineMax > 0 && fine > lim.fineMax) return showAlert("CHYBA", `Maximální pokuta je $${lim.fineMax.toLocaleString()}.`);
-
-        protocol.push({ id: Date.now(), lawId: laws[lIdx].id, title: laws[lIdx].title, sub: laws[lIdx].subs[sIdx].text, jail, fine, minJ: lim.jailMin, life: lim.life });
+        protocol.push({ id: Date.now(), lawId: laws[lIdx].id, title: laws[lIdx].title, sub: sub.text, jail, fine, minJ: lim.jailMin, life: lim.life });
         updateProtocol();
     }
 
