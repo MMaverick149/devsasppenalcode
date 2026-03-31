@@ -2,214 +2,200 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v119</title>
+    <title>SASP - Detail záznamu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        :root {
-            --bg-main: #0a0b0d; --bg-panel: #111317;
-            --accent: #ffcc00; --danger: #ff4444;
-            --warning: #ff8800; --info: #00aaff; --fine: #00ff88; --border: #202124;
+        :root { 
+            --bg-dark: #0b0e14; 
+            --sidebar-bg: #151921; 
+            --card-bg: #1c212b; 
+            --accent-blue: #4a9eff; 
+            --border: #2d333b; 
+            --gold: #ffcc00; /* Výraznější žlutá/zlatá */
+            --danger: #f85149; 
+            --success: #2ea043; 
+        }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-dark); color: white; margin: 0; display: flex; height: 100vh; }
+        
+        .sidebar { width: 180px; background: var(--sidebar-bg); border-right: 1px solid var(--border); padding: 15px; flex-shrink: 0; }
+        .main { flex-grow: 1; padding: 20px 40px; overflow-y: auto; }
+        .container-fluid { width: 100%; }
+
+        /* Hlavní nadpis žlutě */
+        h2 { font-weight: bold; margin-bottom: 25px; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; }
+
+        .card { background: var(--card-bg); border: 1px solid var(--border); padding: 25px; border-radius: 4px; margin-bottom: 20px; }
+        
+        .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 25px; margin-bottom: 20px; }
+        
+        label { color: var(--accent-blue); font-size: 11px; font-weight: bold; text-transform: uppercase; display: block; margin-bottom: 8px; }
+        
+        input, select, textarea { 
+            width: 100%; background: #0b0e14; border: 1px solid var(--border); 
+            color: white; padding: 12px; border-radius: 3px; font-size: 14px; box-sizing: border-box; 
         }
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
-        
-        #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-main); z-index: 200000; display: flex; justify-content: center; align-items: center; }
-        .login-card { background: #111317; padding: 60px 40px; border-radius: 20px; text-align: center; width: 450px; border: 2px solid rgba(255, 204, 0, 0.1); }
-        .login-btn { background: var(--accent); color: #000; border: none; padding: 18px 40px; font-weight: 900; cursor: pointer; border-radius: 5px; width: 100%; }
+        /* Systémový záznam */
+        .sys-record { border: 1px dashed #444; color: #aaa; font-size: 13px; font-style: italic; min-height: 80px; background: rgba(0,0,0,0.3); padding: 15px; }
 
-        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; }
+        /* Sekce poznámek se žlutým textem a okrajem */
+        .notes-card { border-top: 4px solid var(--gold); }
+        .notes-header { 
+            display: flex; align-items: center; gap: 10px; 
+            color: var(--gold); /* Žlutý text nadpisu */
+            margin-bottom: 15px; font-weight: bold; text-transform: uppercase; font-size: 14px; 
+        }
+        
+        textarea#case-notes { min-height: 400px; font-family: 'Consolas', monospace; font-size: 15px; border-color: #444; }
 
-        #mainApp { display: none; height: 100vh; width: 100%; }
-        #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
-        #rightPanel { flex: 1.2; min-width: 400px; background: var(--bg-panel); display: flex; flex-direction: column; }
+        /* Varování přes obrazovku */
+        #locked-screen-warning {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(248, 81, 73, 0.15); /* Jemný červený nádech přes vše */
+            border: 10px solid var(--danger);
+            pointer-events: none; /* Aby se dalo klikat skrz na prohlížení */
+            z-index: 9999;
+            box-sizing: border-box;
+        }
         
-        .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
-        .law-description { flex: 1; font-size: 15px; color: #ddd; }
-        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 8px; width: 70px; text-align: center; border-radius: 4px; }
-        
-        .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; }
-        .status-bar { color: white; padding: 12px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; font-size: 12px; text-transform: uppercase; display: none; }
-        
-        #courtAlert { background: var(--warning); color: #000; }
-        #maxAlert { background: var(--danger); color: #fff; animation: pulse 1s infinite alternate; }
-        @keyframes pulse { from { opacity: 1; } to { opacity: 0.6; } }
+        .locked-banner {
+            background: var(--danger); color: white; padding: 20px; 
+            font-size: 20px; font-weight: bold; text-align: center; 
+            margin-bottom: 30px; border-radius: 4px; display: none;
+        }
+
+        .btn-row { display: flex; justify-content: flex-end; gap: 15px; margin-bottom: 50px; }
+        .btn { border: none; padding: 14px 30px; border-radius: 4px; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 10px; }
+        .btn-resolve { background: var(--success); color: white; }
+        .btn-save { background: var(--accent-blue); color: black; }
     </style>
 </head>
 <body>
 
-<div id="loginOverlay">
-    <div class="login-card">
-        <h1 style="color:var(--accent); letter-spacing: 2px;">SASP TERMINÁL</h1>
-        <button class="login-btn" onclick="login()">VSTOUPIT DO EVIDENCE</button>
-    </div>
+<div id="locked-screen-warning"></div>
+
+<div class="sidebar">
+    <a href="index.html" style="color: var(--accent-blue); text-decoration: none; font-size: 12px; font-weight: bold;">
+        <i class="fa-solid fa-arrow-left"></i> ZPĚT
+    </a>
 </div>
 
-<div id="modalOverlay">
-    <div class="modal-box">
-        <h1 style="color:var(--danger); font-size: 50px;">⚠️</h1>
-        <h2 id="modalTitle" style="color:#fff;">NELEGÁLNÍ TREST</h2>
-        <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px;"></p>
-        <button onclick="closeModal()" style="background:var(--danger); color:white; border:none; padding:15px 30px; font-weight:900; cursor:pointer; border-radius:5px;">ROZUMÍM</button>
-    </div>
-</div>
-
-<div id="mainApp">
-    <div id="leftPanel">
-        <div style="padding:20px; border-bottom:2px solid var(--border); background: #16181d;">
-            <input type="text" id="searchInput" placeholder="Vyhledat v zákoníku (paragraf, název)..." oninput="render()" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:12px; border-radius: 5px;">
+<div class="main">
+    <div class="container-fluid">
+        <div id="locked-msg" class="locked-banner">
+            <i class="fa-solid fa-triangle-exclamation"></i> TENTO ZÁZNAM JE UZAVŘEN - POUZE PRO ČTENÍ
         </div>
-        <div id="lawsContainer" style="overflow-y:auto; padding:20px;"></div>
-    </div>
+        
+        <h2>Evidence Operativních Prostředků</h2>
+        
+        <div class="card">
+            <div class="grid-3">
+                <div><label>Vyšetřující detektiv</label><input type="text" id="det-name"></div>
+                <div><label>Hodnost</label>
+                    <select id="det-rank">
+                        <option>DBI Trainee</option><option>Detective I</option><option>Detective II</option><option>Command</option>
+                    </select>
+                </div>
+                <div><label>Case ID</label><input type="text" id="case-id"></div>
+            </div>
+            
+            <div class="grid-3">
+                <div><label>Subjekt (Jméno Příjmení)</label><input type="text" id="sub-name"></div>
+                <div><label>Datum narození</label><input type="text" id="sub-dob"></div>
+                <div><label>MDT ID</label><input type="text" id="mdt-id"></div>
+            </div>
 
-    <div id="rightPanel">
-        <div style="padding:15px; background:#000; font-size:11px; color:#444;">SASP | EVIDENCE PŘÍPADU</div>
-        
-        <div id="courtAlert" class="status-bar">⚖️ NUTNO VOLAT SZ (MIN. SAZBA > 20J)</div>
-        <div id="maxAlert" class="status-bar">🚫 PŘEKROČEN LIMIT 80 LET</div>
-        <div id="warnWeapon" class="status-bar" style="background:var(--danger);">⚠️ ODEBRAT ZBROJNÍ PRŮKAZ</div>
-        <div id="warnDriver" class="status-bar" style="background:#ff6600;">⚠️ ODEBRAT ŘIDIČSKÝ PRŮKAZ</div>
-        
-        <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
-        
-        <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px;">
-                <span>SOUČET MINIM:</span>
-                <span id="sumMin" style="color:#777">0 J</span>
+            <div class="grid-3">
+                <div style="grid-column: span 2;">
+                    <label>Právní kvalifikace (Lze přepisovat tresty)</label>
+                    <input list="crimes-list" id="legal-qual" placeholder="Vyberte nebo napište vlastní trestný čin a trest...">
+                    <datalist id="crimes-list">
+                        <option value="§6 a) Zločin v organizaci (15 let - doživotí)">
+                        <option value="§6 b) Zločin v organizaci s naplněním (Doživotí)">
+                        <option value="§7 a) Ublížení - neúmyslně zbraní (1-5 let)">
+                        <option value="§7 c) Ublížení - úmyslně střelnou zbraní (3-10 let)">
+                        <option value="§9 Vražda (Doživotí)">
+                        <option value="§11 Pokus o vraždu (20-30 let)">
+                        <option value="§18 Loupežné přepadení (10-20 let)">
+                    </datalist>
+                </div>
+                <div>
+                    <label>Typ OPP</label>
+                    <select id="opp-type">
+                        <option>Prověrka majetku a finančních prostředků</option>
+                        <option>Sledování osob a věcí</option>
+                        <option>Odposlech a záznam</option>
+                    </select>
+                </div>
             </div>
-            <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:20px; font-size: 22px;">
-                <span>CELKOVÝ TREST:</span>
-                <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
+
+            <label>Zjištěné skutečnosti (Systémový záznam)</label>
+            <textarea class="sys-record" readonly>Na základě prvotního ohledání místa činu bylo zjištěno, že došlo k násilnému trestnému činu...</textarea>
+
+            <label>Doplňující odůvodnění žádosti</label>
+            <textarea id="user-note" style="min-height: 80px;" placeholder="Vlastní text..."></textarea>
+        </div>
+
+        <div class="card notes-card">
+            <div class="notes-header">
+                <i class="fa-solid fa-clipboard-list"></i> PRŮBĚŽNÉ POZNÁMKY A OPERATIVNÍ DENÍK
             </div>
-            <button onclick="resetCase()" style="width:100%; padding:18px; background:var(--info); color:white; border:none; font-weight:900; cursor:pointer; border-radius:5px;">NOVÝ PŘÍPAD / RESET</button>
+            <textarea id="case-notes" placeholder="Zápis vyšetřování..."></textarea>
+        </div>
+
+        <div class="btn-row" id="action-buttons">
+            <button class="btn btn-save" onclick="saveData('OTEVŘENO')"><i class="fa-solid fa-save"></i> ULOŽIT</button>
+            <button class="btn btn-resolve" onclick="saveData('VYŘEŠENO')"><i class="fa-solid fa-check-double"></i> SCHVÁLIT A ARCHIVOVAT</button>
         </div>
     </div>
 </div>
 
 <script>
-    let laws = [];
-    let protocol = [];
-    const LIMIT_ZKRACENE = 20; // Limit součtu minimálních sazeb pro zkrácené řízení
-    const MAX_TOTAL_JAIL = 80; // Absolutní stopka pro MDT
+    const urlParams = new URLSearchParams(window.location.search);
+    const caseIndex = urlParams.get('id');
+    let cases = JSON.parse(localStorage.getItem('lspd_v15_data')) || [];
 
-    function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
-    function showModal(title, msg) { 
-        document.getElementById('modalTitle').innerText = title;
-        document.getElementById('modalMsg').innerText = msg; 
-        document.getElementById('modalOverlay').style.display = 'flex'; 
-    }
-    function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
-    function resetCase() { protocol = []; updateProtocol(); }
-
-    function parseDualLimits(text) {
-        const cleanText = text.replace(/\./g, '').toLowerCase();
-        let limits = { jail: { min: 0, max: 0 }, life: false };
-        if (cleanText.includes("doživotí")) limits.life = true;
-
-        const jailRange = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)\s*let/);
-        const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*(?:do|na)\s+(\d+)\s+let/);
+    if(caseIndex !== null && cases[caseIndex]) {
+        let c = cases[caseIndex];
+        document.getElementById('det-name').value = c.author || '';
+        document.getElementById('case-id').value = c.id || '';
+        document.getElementById('sub-name').value = c.subject || '';
+        document.getElementById('sub-dob').value = c.dob || '';
+        document.getElementById('mdt-id').value = c.mdt || '';
+        document.getElementById('legal-qual').value = c.legal || '';
+        document.getElementById('opp-type').value = c.opp || '';
+        document.getElementById('case-notes').value = c.notes || '';
+        document.getElementById('user-note').value = c.note || '';
         
-        if (jailRange) { limits.jail.min = parseInt(jailRange[1]); limits.jail.max = parseInt(jailRange[2]); }
-        else if (jailFromTo) { limits.jail.min = parseInt(jailFromTo[1]); limits.jail.max = parseInt(jailFromTo[2]); }
-        
-        return limits;
-    }
-
-    async function load() {
-        try {
-            const res = await fetch('tresty.html?v=' + Date.now());
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            laws = Array.from(doc.querySelectorAll('.law-item')).map(item => ({
-                title: item.getAttribute('data-title'),
-                subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                    const text = line.innerText;
-                    const limits = parseDualLimits(text);
-                    return {
-                        html: line.innerHTML, fullText: text,
-                        valJ: line.getAttribute('data-fix-jail') || "", 
-                        valF: line.getAttribute('data-fix-fine') || "",
-                        isFixJ: line.getAttribute('data-fix-jail') !== null,
-                        limits: limits,
-                        licW: text.toUpperCase().includes("ZBROJNÍ"), 
-                        licD: text.toUpperCase().includes("ŘIDIČSKÝ")
-                    };
-                })
-            }));
-            render();
-        } catch (e) { console.error(e); }
-    }
-
-    function render() {
-        const container = document.getElementById('lawsContainer');
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        container.innerHTML = laws.filter(l => l.title.toLowerCase().includes(search)).map((law, lIdx) => `
-            <div style="background:var(--bg-panel); border:1px solid var(--border); margin-bottom:12px; border-radius:8px;">
-                <div style="padding:15px; background:#1c1f24; color:var(--accent); font-weight:900; cursor:pointer;" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">${law.title}</div>
-                <div style="padding:15px; display:none;">
-                    ${law.subs.map((sub, sIdx) => `
-                        <div class="row">
-                            <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="JAIL">
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="FINE">
-                            <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:10px 15px; border-radius:4px; font-weight:900; cursor:pointer;">+</button>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function add(lIdx, sIdx) {
-        const sub = laws[lIdx].subs[sIdx];
-        const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
-        const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
-
-        if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
-            if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
-                showModal("MIMO SAZBU", `Tento paragraf má sazbu ${sub.limits.jail.min}-${sub.limits.jail.max} let.`);
-                return;
-            }
+        // Pokud je vyřešeno, zamknout vše a ukázat varování
+        if(c.status === 'VYŘEŠENO') {
+            document.querySelectorAll('input, select, textarea').forEach(el => el.disabled = true);
+            document.getElementById('locked-msg').style.display = 'block';
+            document.getElementById('locked-screen-warning').style.display = 'block';
+            document.getElementById('action-buttons').style.display = 'none';
         }
-
-        protocol.push({ 
-            id: Date.now(), title: laws[lIdx].title, jail, fine, 
-            minJail: sub.limits.jail.min, life: sub.limits.life,
-            licW: sub.licW, licD: sub.licD 
-        });
-        updateProtocol();
     }
 
-    function updateProtocol() {
-        const totalJail = protocol.reduce((a, b) => a + b.jail, 0);
-        const sumMinJail = protocol.reduce((a, b) => a + b.minJail, 0);
-        const hasLife = protocol.some(p => p.life);
-
-        document.getElementById('caseEntries').innerHTML = protocol.map(p => `
-            <div class="protocol-card">
-                <div style="color:var(--accent); font-weight:900;">${p.title}</div>
-                <div style="font-size:22px; margin-top:5px;">${p.jail} J | $${p.fine.toLocaleString()}</div>
-                <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
-            </div>
-        `).join('');
-
-        // LOGIKA VAROVÁNÍ
-        const needsCourt = sumMinJail > LIMIT_ZKRACENE || hasLife;
-        const isOverLimit = totalJail > MAX_TOTAL_JAIL;
-
-        document.getElementById('courtAlert').style.display = (needsCourt && !isOverLimit) ? 'block' : 'none';
-        document.getElementById('maxAlert').style.display = isOverLimit ? 'block' : 'none';
-        document.getElementById('warnWeapon').style.display = protocol.some(p => p.licW) ? 'block' : 'none';
-        document.getElementById('warnDriver').style.display = protocol.some(p => p.licD) ? 'block' : 'none';
-
-        document.getElementById('sumMin').innerText = sumMinJail + " J";
-        document.getElementById('sumJail').innerText = totalJail;
-        document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
-        
-        document.getElementById('sumMin').style.color = sumMinJail > LIMIT_ZKRACENE ? 'var(--warning)' : '#777';
-        document.getElementById('sumJail').style.color = isOverLimit ? 'var(--danger)' : 'var(--info)';
+    function saveData(status) {
+        let entry = {
+            id: document.getElementById('case-id').value || '---',
+            author: document.getElementById('det-name').value || 'Michala',
+            subject: document.getElementById('sub-name').value || '---',
+            dob: document.getElementById('sub-dob').value || '',
+            mdt: document.getElementById('mdt-id').value || '',
+            legal: document.getElementById('legal-qual').value,
+            opp: document.getElementById('opp-type').value,
+            notes: document.getElementById('case-notes').value,
+            note: document.getElementById('user-note').value,
+            status: status
+        };
+        if(caseIndex !== null) cases[caseIndex] = entry; else cases.push(entry);
+        localStorage.setItem('lspd_v15_data', JSON.stringify(cases));
+        window.location.href = 'index.html';
     }
-
-    function remove(id) { protocol = protocol.filter(x => x.id !== id); updateProtocol(); }
 </script>
 </body>
 </html>
