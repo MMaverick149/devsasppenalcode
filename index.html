@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v120</title>
+    <title>SASP MDT - TERMINÁL v121</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -12,29 +12,28 @@
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        /* LOGIN */
         #loginOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg-main); z-index: 200000; display: flex; justify-content: center; align-items: center; }
         .login-card { background: #111317; padding: 60px 40px; border-radius: 20px; text-align: center; width: 450px; border: 2px solid rgba(255, 204, 0, 0.1); }
         .login-btn { background: var(--accent); color: #000; border: none; padding: 18px 40px; font-weight: 900; cursor: pointer; border-radius: 5px; width: 100%; }
 
-        /* MODAL / ALERT */
         #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; display: none; justify-content: center; align-items: center; }
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 500px; box-shadow: 0 0 50px rgba(255,0,0,0.5); }
 
-        /* MAIN APP */
         #mainApp { display: none; height: 100vh; width: 100%; }
         #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
         #rightPanel { flex: 1.2; min-width: 400px; background: var(--bg-panel); display: flex; flex-direction: column; }
         
-        /* LAW LIST */
+        /* TEXT ZÁKONA - VYNUCENÁ ŽLUTÁ */
+        .law-description { flex: 1; font-size: 15px; color: #fff; line-height: 1.4; }
+        .law-description b, .law-description strong, .law-description span[style*="color"] { 
+            color: var(--accent) !important; 
+            font-weight: 900 !important; 
+        }
+        
+        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 8px; width: 75px; text-align: center; border-radius: 4px; }
+        .input-box:disabled { background: #111 !important; color: #444 !important; border-color: #222; }
+        
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
-        .law-description { flex: 1; font-size: 15px; color: #fff; } /* Bílá pro základní text */
-        .law-description b, .law-description strong { color: var(--accent) !important; font-weight: 900; } /* Žlutá pro důležité */
-        
-        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 8px; width: 70px; text-align: center; border-radius: 4px; }
-        .input-box:disabled { background: #111 !important; color: #555 !important; border-color: #222; cursor: not-allowed; }
-        
-        /* PROTOCOL */
         .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; }
         .status-bar { color: white; padding: 12px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; font-size: 12px; text-transform: uppercase; display: none; }
     </style>
@@ -44,15 +43,15 @@
 <div id="modalOverlay">
     <div class="modal-box" id="modalBox">
         <h1 id="modalIcon" style="font-size: 60px; margin: 0;">⚠️</h1>
-        <h2 id="modalTitle" style="color:#fff; margin: 10px 0;">VAROVÁNÍ</h2>
+        <h2 id="modalTitle" style="color:#fff; margin: 10px 0;">PŘEKROČENÍ LIMITU</h2>
         <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px;"></p>
-        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 40px; font-weight:900; cursor:pointer; border-radius:5px; text-transform:uppercase;">Rozumím</button>
+        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 40px; font-weight:900; cursor:pointer; border-radius:5px;">OPRAVIT TREST</button>
     </div>
 </div>
 
 <div id="loginOverlay">
     <div class="login-card">
-        <h1 style="color:var(--accent); letter-spacing: 2px;">SASP TERMINÁL v120</h1>
+        <h1 style="color:var(--accent); letter-spacing: 2px;">SASP TERMINÁL v121</h1>
         <button class="login-btn" onclick="login()">VSTOUPIT DO EVIDENCE</button>
     </div>
 </div>
@@ -60,15 +59,15 @@
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:20px; border-bottom:2px solid var(--border); background: #16181d;">
-            <input type="text" id="searchInput" placeholder="Vyhledat paragraf..." oninput="render()" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:12px; border-radius: 5px;">
+            <input type="text" id="searchInput" placeholder="Vyhledat v zákoníku..." oninput="render()" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:12px; border-radius: 5px;">
         </div>
         <div id="lawsContainer" style="overflow-y:auto; padding:20px;"></div>
     </div>
 
     <div id="rightPanel">
-        <div style="padding:15px; background:#000; font-size:11px; color:#444;">AKTIVNÍ PROTOCOL</div>
+        <div style="padding:15px; background:#000; font-size:11px; color:#444;">AKTIVNÍ PROTOKOL PŘÍPADU</div>
         
-        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ NUTNO VOLAT SZ (MINIMÁLNÍ SAZBY > 20J)</div>
+        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ NUTNO VOLAT SZ (SOUČET MINIMÁLNÍCH SAZEB > 20J)</div>
         <div id="maxAlert" class="status-bar" style="background:var(--danger);">🚫 PŘEKROČEN LIMIT 80 LET</div>
         <div id="warnWeapon" class="status-bar" style="background:var(--danger);">⚠️ ODEBRAT ZBROJNÍ PRŮKAZ</div>
         <div id="warnDriver" class="status-bar" style="background:#ff6600;">⚠️ ODEBRAT ŘIDIČSKÝ PRŮKAZ</div>
@@ -77,7 +76,7 @@
         
         <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
             <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:10px; color:#555; font-size:12px;">
-                <span>SOUČET MINIMÁLNÍCH SAZEB:</span>
+                <span>SOUČET MINIM:</span>
                 <span id="sumMin">0 J</span>
             </div>
             <div style="display:flex; justify-content:space-between; font-weight:900; margin-bottom:20px; font-size: 22px;">
@@ -92,40 +91,33 @@
 <script>
     let laws = [];
     let protocol = [];
-    const LIMIT_SZ = 20; // Hranice pro SZ (zkrácené řízení)
-    const LIMIT_MAX = 80; // Absolutní strop MDT
+    const LIMIT_SZ = 20;
+    const LIMIT_MAX = 80;
 
     function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
     
-    function showAlert(type, title, msg) {
+    function showAlert(title, msg, type = 'danger') {
         const modal = document.getElementById('modalOverlay');
-        const box = document.getElementById('modalBox');
         document.getElementById('modalTitle').innerText = title;
         document.getElementById('modalMsg').innerText = msg;
-        
-        if(type === 'danger') {
-            box.style.borderColor = 'var(--danger)';
-            document.getElementById('modalIcon').innerText = '🚫';
-        } else {
-            box.style.borderColor = 'var(--warning)';
-            document.getElementById('modalIcon').innerText = '⚖️';
-        }
+        document.getElementById('modalBox').style.borderColor = type === 'danger' ? 'var(--danger)' : 'var(--warning)';
         modal.style.display = 'flex';
     }
 
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
-    function resetCase() { protocol = []; updateProtocol(); render(); }
+    function resetCase() { protocol = []; updateProtocol(); }
 
     function parseDualLimits(text) {
         const cleanText = text.replace(/\./g, '').toLowerCase();
-        let limits = { jail: { min: 0, max: 0 }, life: cleanText.includes("doživotí") };
+        let limits = { jail: { min: 0, max: 0 }, fine: { max: 0 }, life: cleanText.includes("doživotí") };
+        
         const jailRange = cleanText.match(/(\d+)\s*[-–至až]\s*(\d+)\s*let/);
         const jailFromTo = cleanText.match(/od\s+(\d+)\s+.*(?:do|na)\s+(\d+)\s+let/);
-        const jailSazba = cleanText.match(/sazba\s+(\d+)\s*[-–]\s*(\d+)/);
-
         if (jailRange) { limits.jail.min = parseInt(jailRange[1]); limits.jail.max = parseInt(jailRange[2]); }
         else if (jailFromTo) { limits.jail.min = parseInt(jailFromTo[1]); limits.jail.max = parseInt(jailFromTo[2]); }
-        else if (jailSazba) { limits.jail.min = parseInt(jailSazba[1]); limits.jail.max = parseInt(jailSazba[2]); }
+
+        const fineMatch = cleanText.match(/(?:trest|pokut).*?(\d+)\s*\$/);
+        if (fineMatch) limits.fine.max = parseInt(fineMatch[1]);
         
         return limits;
     }
@@ -140,7 +132,8 @@
                 subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
                     const text = line.innerText;
                     return {
-                        html: line.innerHTML, fullText: text,
+                        html: line.innerHTML, 
+                        fullText: text, // Tady je nyní kompletní text včetně a,b,c
                         valJ: line.getAttribute('data-fix-jail') || "", 
                         valF: line.getAttribute('data-fix-fine') || "",
                         isFixJ: line.getAttribute('data-fix-jail') !== null,
@@ -180,23 +173,28 @@
         const jail = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
 
-        // Kontrola sazeb
+        // KONTROLA LIMITU JAIL
         if (jail > 0 && !sub.isFixJ && sub.limits.jail.max > 0) {
             if (jail < sub.limits.jail.min || jail > sub.limits.jail.max) {
-                showAlert('danger', 'MIMO SAZBU', `Trest musí být v rozmezí ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
+                showAlert('NELEGÁLNÍ JAIL', `Trest musí být v rozmezí ${sub.limits.jail.min} až ${sub.limits.jail.max} let.`);
                 return;
             }
         }
 
-        // Kontrola součtu minim pro SZ
-        const currentSumMin = protocol.reduce((a, b) => a + b.minJ, 0);
-        if ((currentSumMin + sub.limits.jail.min) > LIMIT_SZ || sub.limits.life) {
-            showAlert('warning', 'PŘEDAT SZ / SOUDU', `Součet minimálních sazeb přesahuje 20 let nebo jde o doživotní čin. Nelze řešit zkráceným řízením!`);
+        // KONTROLA LIMITU POKUTY (OPRAVA)
+        if (fine > 0 && !sub.isFixF && sub.limits.fine.max > 0) {
+            if (fine > sub.limits.fine.max) {
+                showAlert('NELEGÁLNÍ POKUTA', `Maximální povolená pokuta pro tento čin je $${sub.limits.fine.max.toLocaleString()}.`);
+                return;
+            }
         }
 
         protocol.push({ 
-            id: Date.now(), title: laws[lIdx].title, jail, fine, 
-            minJ: sub.limits.jail.min, life: sub.limits.life,
+            id: Date.now(), 
+            title: sub.fullText, // Teď ukládáme celý text řádku (včetně a, b, c)
+            jail, fine, 
+            minJ: sub.limits.jail.min, 
+            life: sub.limits.life,
             licW: sub.licW, licD: sub.licD 
         });
         updateProtocol();
@@ -206,14 +204,10 @@
         const totalJ = protocol.reduce((a, b) => a + b.jail, 0);
         const totalMin = protocol.reduce((a, b) => a + b.minJ, 0);
         
-        if (totalJ > LIMIT_MAX) {
-            showAlert('danger', 'KRITICKÝ LIMIT', 'Celkový trest přesáhl 80 let. Toto MDT nepodporuje!');
-        }
-
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card">
-                <div style="color:var(--accent); font-weight:900; font-size:13px;">${p.title}</div>
-                <div style="font-size:20px; margin-top:5px; font-weight:900;">${p.jail} J | $${p.fine.toLocaleString()}</div>
+                <div style="color:var(--accent); font-weight:900; font-size:12px; margin-bottom:5px;">${p.title}</div>
+                <div style="font-size:22px; font-weight:900;">${p.jail} J | $${p.fine.toLocaleString()}</div>
                 <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
             </div>
         `).join('');
