@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v130</title>
+    <title>SASP MDT - TERMINÁL v131</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -12,63 +12,68 @@
 
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background: var(--bg-main); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
         
-        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100000; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 550px; box-shadow: 0 0 50px rgba(255,0,0,0.2); }
+        /* VAROVÁNÍ PŘES CELOU OBRAZOVKU */
+        #modalOverlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100000; display: none; justify-content: center; align-items: center; }
+        .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 600px; box-shadow: 0 0 60px rgba(255,0,0,0.3); }
 
         #mainApp { display: none; height: 100vh; width: 100%; }
         #leftPanel { flex: 3; border-right: 2px solid var(--border); display: flex; flex-direction: column; }
-        #rightPanel { flex: 1.2; min-width: 400px; background: var(--bg-panel); display: flex; flex-direction: column; }
+        #rightPanel { flex: 1.2; min-width: 420px; background: var(--bg-panel); display: flex; flex-direction: column; }
         
-        .law-category-header { padding: 15px; background: #1c1f24; color: var(--accent) !important; font-weight: 900; cursor: pointer; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+        .law-category-header { padding: 15px; background: #1c1f24; color: var(--accent) !important; font-weight: 900; cursor: pointer; border-bottom: 1px solid var(--border); text-transform: uppercase; font-size: 13px; }
         .law-content { padding: 15px; display: none; background: #111317; }
         
         .row { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid #1a1c20; }
         .law-description { flex: 1; font-size: 14px; color: #fff; line-height: 1.4; }
-        .law-description b, .law-description strong { color: var(--accent) !important; font-weight: 900; }
+        .law-description b { color: var(--accent) !important; }
         
-        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 8px; width: 85px; text-align: center; border-radius: 4px; }
+        .input-box { background: #000; border: 1px solid #333; color: var(--accent); font-weight: 900; padding: 10px; width: 90px; text-align: center; border-radius: 4px; font-size: 16px; }
         
-        .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; }
-        .prot-header { color: var(--accent); font-weight: 900; cursor: pointer; display: block; margin-bottom: 5px; font-size: 13px; text-transform: uppercase; }
+        .protocol-card { background: #000; border: 1px solid var(--border); margin: 10px; padding: 15px; border-radius: 8px; position: relative; border-left: 4px solid var(--accent); }
+        .prot-header { color: var(--accent); font-weight: 900; display: block; margin-bottom: 5px; font-size: 12px; text-transform: uppercase; }
         .prot-sub { color: #fff; font-size: 11px; display: block; opacity: 0.7; margin-bottom: 8px; }
         
-        .status-bar { color: white; padding: 12px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; font-size: 11px; }
+        .status-bar { color: white; padding: 14px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; font-size: 12px; letter-spacing: 1px; }
+        
+        button.add-btn { background: var(--accent); border: none; padding: 10px 20px; font-weight: 900; cursor: pointer; border-radius: 4px; transition: opacity 0.2s; }
+        button.add-btn:hover { opacity: 0.8; }
     </style>
 </head>
 <body>
 
 <div id="modalOverlay">
     <div class="modal-box">
-        <h1 style="font-size: 60px; margin: 0;">🛑</h1>
-        <h2 id="modalTitle" style="color:#fff;">VALIDACE TRESTU</h2>
-        <p id="modalMsg" style="color:#ccc; font-size: 16px; margin-bottom: 30px; line-height: 1.5;"></p>
-        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:12px 40px; font-weight: 900; cursor:pointer; border-radius:5px; text-transform: uppercase;">Upravit zadání</button>
+        <h1 style="font-size: 70px; margin: 0;">⚖️</h1>
+        <h2 id="modalTitle" style="color:#fff; margin: 10px 0;">SOUDNÍ ŘÍZENÍ / SZ</h2>
+        <p id="modalMsg" style="color:#ccc; font-size: 18px; margin-bottom: 30px; line-height: 1.6; font-weight: 500;"></p>
+        <button onclick="closeModal()" style="background:var(--accent); color:#000; border:none; padding:15px 50px; font-weight: 900; cursor:pointer; border-radius:5px; text-transform: uppercase; font-size: 16px;">ROZUMÍM</button>
     </div>
 </div>
 
 <div id="loginOverlay" style="position:fixed; width:100%; height:100%; background:var(--bg-main); z-index:200; display:flex; justify-content:center; align-items:center;">
-    <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px; letter-spacing: 2px;">AUTORIZOVAT PŘÍSTUP</button>
+    <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px; letter-spacing: 2px;">OTEVŘÍT MDT</button>
 </div>
 
 <div id="mainApp">
     <div id="leftPanel">
         <div style="padding:20px; background: #16181d; border-bottom: 2px solid var(--border);">
-            <input type="text" id="searchInput" placeholder="Hledat v trestním zákoníku..." oninput="render()" style="width:100%; padding:14px; background:#000; border:1px solid #444; color:#fff; border-radius:5px;">
+            <input type="text" id="searchInput" placeholder="Vyhledat v Penal Code..." oninput="render()" style="width:100%; padding:15px; background:#000; border:1px solid #444; color:#fff; border-radius:5px; font-size: 15px;">
         </div>
-        <div id="lawsContainer" style="overflow-y:auto; padding:20px; scroll-behavior: smooth;"></div>
+        <div id="lawsContainer" style="overflow-y:auto; padding:20px;"></div>
     </div>
 
     <div id="rightPanel">
-        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ NUTNÁ KONZULTACE SZ / SOUD</div>
-        <div id="maxAlert" class="status-bar" style="background:var(--danger);">🚫 LIMIT MDT (80J) PŘEKROČEN</div>
+        <div id="courtAlert" class="status-bar" style="background:var(--warning); color:#000;">⚖️ NUTNO KONTAKTOVAT SZ / SOUD</div>
+        <div id="maxAlert" class="status-bar" style="background:var(--danger);">🚫 PŘEKROČEN LIMIT MDT (80 LET)</div>
+        
         <div id="caseEntries" style="flex-grow:1; overflow-y:auto;"></div>
         
         <div style="padding:25px; background:#000; border-top:2px solid var(--border);">
-            <div style="display:flex; justify-content:space-between; font-size:22px; font-weight:900;">
+            <div style="display:flex; justify-content:space-between; font-size:24px; font-weight:900;">
                 <span>CELKEM:</span>
                 <span><span id="sumJail" style="color:var(--info)">0</span> J | <span id="sumFine" style="color:var(--fine)">0</span> $</span>
             </div>
-            <button onclick="resetCase()" style="width:100%; margin-top:15px; padding:18px; background:var(--info); color:white; border:none; font-weight:900; border-radius:5px; cursor:pointer;">VYČISTIT PROTOKOL</button>
+            <button onclick="resetCase()" style="width:100%; margin-top:15px; padding:20px; background:var(--info); color:white; border:none; font-weight:900; border-radius:5px; cursor:pointer; text-transform: uppercase; letter-spacing: 1px;">NOVÝ PŘÍPAD</button>
         </div>
     </div>
 </div>
@@ -79,7 +84,11 @@
 
     function login() { document.getElementById('loginOverlay').style.display = 'none'; document.getElementById('mainApp').style.display = 'flex'; load(); }
     function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
-    function showAlert(title, msg) { document.getElementById('modalTitle').innerText = title; document.getElementById('modalMsg').innerText = msg; document.getElementById('modalOverlay').style.display = 'flex'; }
+    function showGlobalAlert(title, msg) { 
+        document.getElementById('modalTitle').innerText = title; 
+        document.getElementById('modalMsg').innerText = msg; 
+        document.getElementById('modalOverlay').style.display = 'flex'; 
+    }
 
     function getHardLimits(text) {
         const clean = text.replace(/\./g, '').toLowerCase();
@@ -96,8 +105,7 @@
                 else { limits.jailMax = parseInt(singleMatch[1]); }
             }
         }
-
-        if (limits.life && limits.jailMin === 0) limits.jailMin = 20;
+        if (limits.life && limits.jailMin === 0) limits.jailMin = 25;
 
         const fineMatches = clean.match(/do\s*(\d[\d\s]*)\s*\$/i) || clean.match(/(\d[\d\s]*)\s*\$/g);
         if(fineMatches) {
@@ -131,9 +139,9 @@
                     ${law.subs.map((sub, sIdx) => `
                         <div class="row">
                             <div class="law-description">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="JAIL">
-                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="FINE $">
-                            <button onclick="add(${lIdx}, ${sIdx})" style="background:var(--accent); border:none; padding:10px 18px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
+                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" value="${sub.valJ}" placeholder="J">
+                            <input type="number" class="input-box" id="f_${lIdx}_${sIdx}" value="${sub.valF}" placeholder="$">
+                            <button class="add-btn" onclick="add(${lIdx}, ${sIdx})">+</button>
                         </div>
                     `).join('')}
                 </div>
@@ -147,22 +155,27 @@
         const fine = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
         const lim = getHardLimits(sub.text);
 
-        if (jail === 0 && fine === 0) return showAlert("PRÁZDNÉ POLE", "Musíš zadat buď roky vězení, nebo finanční pokutu.");
+        // ZÁKLADNÍ KONTROLA PRÁZDNÉHO ZADÁNÍ
+        if (jail === 0 && fine === 0) return;
 
-        // LOGIKA ALTERNATIVNÍHO TRESTU (Pokud dává pokutu u "nebo", ignoruj minimum let)
-        const skipJailMin = lim.isOptional && fine > 0 && jail === 0;
-
-        if (!skipJailMin && lim.jailMin > 0 && jail < lim.jailMin) {
-            return showAlert("PORUŠENÍ MINIMA", `Tento čin vyžaduje minimálně ${lim.jailMin} let vězení (nebo udělení pokuty).`);
+        // 1. KONTROLA MINIMA LET (pokud není zadána jen pokuta u volitelných trestů)
+        const onlyFine = lim.isOptional && fine > 0 && jail === 0;
+        if (!onlyFine && lim.jailMin > 0 && jail < lim.jailMin) {
+            return showGlobalAlert("NÍZKÝ TREST", `Zákon vyžaduje minimálně ${lim.jailMin} let vězení pro tento čin.`);
         }
 
-        if (lim.jailMax > 0 && jail > lim.jailMax && !lim.life) {
-            const isHighRank = lim.jailMax > 20;
-            return showAlert(isHighRank ? "SOUDNÍ ŘÍZENÍ" : "LIMIT PŘEKROČEN", `Maximum je ${lim.jailMax} let. ${isHighRank ? 'Nutno volat SZ!' : ''}`);
+        // 2. KONTROLA MAXIMA A VAROVÁNÍ O SOUDU (KRITICKÉ)
+        if (jail > lim.jailMax || jail > 20 || lim.life) {
+            // Pokud uživatel zadal víc než je v zákoně, nebo víc než 20, vyhodíme velké varování
+            if (jail > 20 || lim.life || (lim.jailMax > 0 && jail > lim.jailMax)) {
+                showGlobalAlert("SOUDNÍ ŘÍZENÍ", `Pozor! Trest nad 20 let nebo nad horní hranici zákona (${lim.jailMax} let) vyžaduje okamžitou přítomnost SZ / Soudu. Nelze vést zkrácené řízení!`);
+                // Nepřerušujeme add, jen varujeme (pokud to není technický nesmysl)
+            }
         }
 
+        // 3. KONTROLA MAX POKUTY
         if (lim.fineMax > 0 && fine > lim.fineMax) {
-            return showAlert("NEPOVOLENÁ POKUTA", `Maximální možná pokuta je $${lim.fineMax.toLocaleString()}.`);
+            return showGlobalAlert("LIMIT POKUTY", `Maximální povolená pokuta pro tento paragraf je $${lim.fineMax.toLocaleString()}.`);
         }
 
         protocol.push({ 
@@ -178,13 +191,14 @@
 
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card">
-                <span class="prot-header" onclick="document.getElementById('${p.lawId}').scrollIntoView({behavior:'smooth'})">${p.parentTitle}</span>
+                <span class="prot-header">${p.parentTitle}</span>
                 <span class="prot-sub">${p.subText}</span>
-                <div style="font-size:22px; font-weight:900;">${p.jail} J | $${p.fine.toLocaleString()}</div>
-                <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:18px;">✕</button>
+                <div style="font-size:24px; font-weight:900;">${p.jail} J | $${p.fine.toLocaleString()}</div>
+                <button onclick="remove(${p.id})" style="position:absolute; right:15px; top:15px; background:none; border:none; color:var(--danger); cursor:pointer; font-size:20px;">✕</button>
             </div>
         `).join('');
 
+        // Globální varování v panelu
         document.getElementById('courtAlert').style.display = (totalMin > 20 || protocol.some(p => p.life)) ? 'block' : 'none';
         document.getElementById('maxAlert').style.display = totalJ > 80 ? 'block' : 'none';
         document.getElementById('sumJail').innerText = totalJ;
