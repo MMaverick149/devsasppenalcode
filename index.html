@@ -2,7 +2,7 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT - TERMINÁL v151</title>
+    <title>SASP MDT - TERMINÁL v152</title>
     <style>
         :root {
             --bg-main: #0a0b0d; --bg-panel: #111317;
@@ -22,7 +22,7 @@
         .law-item { margin-bottom: 15px; border: 1px solid var(--border); border-radius: 8px; background: #16181d; overflow: hidden; scroll-margin-top: 20px; }
         .law-category-header { padding: 15px; background: #1c1f24; color: var(--accent); font-weight: 900; cursor: pointer; border-bottom: 1px solid var(--border); text-transform: uppercase; }
         
-        .law-content { padding: 10px; display: none; background: #111317; } /* Defaultně zavřené pro přehlednost */
+        .law-content { padding: 10px; display: none; background: #111317; }
         .row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #1a1c20; }
         .law-description { flex: 1; font-size: 14px; color: #eee; line-height: 1.4; }
         
@@ -32,6 +32,7 @@
         .modal-box { background: #1a0000; border: 4px solid var(--danger); padding: 40px; border-radius: 15px; text-align: center; width: 550px; }
         
         .protocol-card { background: #000; border: 1px solid var(--border); margin-bottom: 10px; padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent); position: relative; cursor: pointer; }
+        .sub-text { display: block; font-size: 12px; color: #aaa; margin-top: 4px; font-style: italic; }
         .badge { font-size: 11px; background: var(--danger); color: white; padding: 3px 8px; border-radius: 4px; font-weight: 900; margin-left: 8px; }
         
         .status-bar { color: white; padding: 14px; font-weight: 900; text-align: center; margin: 5px 10px; border-radius: 4px; display: none; text-transform: uppercase; }
@@ -41,7 +42,7 @@
 <body>
 
 <div id="loginOverlay">
-    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v151</h1>
+    <h1 style="color: var(--accent); letter-spacing: 5px; margin-bottom: 30px;">SASP MDT v152</h1>
     <button onclick="login()" style="background:var(--accent); padding:20px 60px; font-weight:900; border:none; border-radius:5px; cursor:pointer; font-size: 18px;">VSTOUPIT DO SYSTÉMU</button>
 </div>
 
@@ -94,7 +95,7 @@
             const title = item.getAttribute('data-title');
             let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
 
-            // RADIKÁLNÍ FIXACE PRO §7
+            // Fixace textů a limitů pro §7 a §11
             if (title.includes('§7')) {
                 subs = subs.map(s => {
                     if (s.text.toLowerCase().includes('d)')) {
@@ -106,11 +107,9 @@
                     return s;
                 });
             }
-
-            // RADIKÁLNÍ FIXACE PRO §11
             if (title.includes('§11')) {
                 subs = [parseSub(
-                    "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz",
+                    "Pokus o vraždu: Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá odnětím svobody od 25 let po doživotí. ODEBRAT Zbrojní Průkaz",
                     "Plánování či neúspěšně plánovaný a úmyslný pokus o usmrcení jiné osoby je trestný čin, který se trestá <b class='highlight'>odnětím svobody od 25 let po doživotí</b>. ODEBRAT Zbrojní Průkaz"
                 )];
             }
@@ -172,22 +171,21 @@
         const valJ = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
 
         if (valJ < sub.minJ && valJ !== 0) {
-            showModal("MINIMÁLNÍ SAZBA", `Zákon vyžaduje u tohoto činu minimálně ${sub.minJ} let. Opravte hodnotu.`, () => closeModal(), "STOP");
+            showModal("BLOKOVÁNO", `Minimální sazba je ${sub.minJ} let!`, () => closeModal(), "STOP");
             return;
         }
 
         if (sub.isZP || sub.isRP) {
-            let msg = "Tento čin vyžaduje odebrání: " + (sub.isZP ? "ZBROJNÍ " : "") + (sub.isRP ? "ŘIDIČSKÝ " : "") + "průkaz. Máte hotovo?";
-            showModal("ODEBRÁNÍ PRŮKAZU", msg, () => validateLife(lIdx, sIdx, valJ), "PRŮKAZY");
+            showModal("DOKLADY", "Odeberte potřebné průkazy!", () => validateLife(lIdx, sIdx, valJ), "PRŮKAZY");
         } else { validateLife(lIdx, sIdx, valJ); }
     }
 
     function validateLife(lIdx, sIdx, valJ) {
         const sub = laws[lIdx].subs[sIdx];
         if (sub.isLife || valJ >= 99) {
-            showModal("DOŽIVOTÍ", "Udělujete doživotní trest. Je přítomen SZ/Soudce?", () => add(lIdx, sIdx), "SOUD");
+            showModal("SOUD", "Je přítomen SZ/Soudce?", () => add(lIdx, sIdx), "SOUD");
         } else if (valJ > sub.maxJ && sub.maxJ !== 999) {
-            showModal("PŘEKROČENÍ LIMITU", `Trest ${valJ} let je nad maximem ${sub.maxJ} let. Vyžaduje SZ/Soudce!`, () => add(lIdx, sIdx), "SOUD");
+            showModal("LIMIT", `Nad limitem ${sub.maxJ} J!`, () => add(lIdx, sIdx), "SOUD");
         } else { add(lIdx, sIdx); }
     }
 
@@ -203,8 +201,13 @@
         const j = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
         const f = parseInt(document.getElementById(`f_${lIdx}_${sIdx}`).value) || 0;
         const sub = laws[lIdx].subs[sIdx];
+        
+        // Extrakce pouze úvodního písmena/popisu pro protokol
+        const shortDesc = sub.text.split('je trestný')[0].split('sazba')[0].trim();
+
         protocol.push({ 
             id: Date.now(), lawId: laws[lIdx].id, title: laws[lIdx].title, 
+            subText: shortDesc,
             jail: j, fine: f, isLife: sub.isLife || j >= 99,
             rp: sub.isRP, zp: sub.isZP 
         });
@@ -216,10 +219,10 @@
         protocol.forEach(p => { if(p.isLife) hasLife = true; else totalJ += p.jail; });
         document.getElementById('caseEntries').innerHTML = protocol.map(p => `
             <div class="protocol-card" onclick="const e=document.getElementById('${p.lawId}'); e.scrollIntoView({behavior:'smooth'}); e.querySelector('.law-content').style.display='block';">
-                <b>${p.title}</b>
-                ${p.zp ? '<span class="badge">ZP</span>' : ''}${p.rp ? '<span class="badge">ŘP</span>' : ''}
-                <div style="font-size:20px; font-weight:900; margin-top:8px;">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
-                <button onclick="event.stopPropagation(); protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:12px; top:12px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
+                <b>${p.title}</b> ${p.zp ? '<span class="badge">ZP</span>' : ''}${p.rp ? '<span class="badge">ŘP</span>' : ''}
+                <span class="sub-text">${p.subText}</span>
+                <div style="font-size:19px; font-weight:900; margin-top:5px; color:var(--accent);">${p.isLife?'DOŽIVOTÍ':p.jail+' J'} | $${p.fine.toLocaleString()}</div>
+                <button onclick="event.stopPropagation(); protocol=protocol.filter(x=>x.id!==${p.id});update()" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--danger); cursor:pointer;">✕</button>
             </div>
         `).join('');
         document.getElementById('courtAlert').style.display = (totalJ > 20 || hasLife) ? 'block' : 'none';
