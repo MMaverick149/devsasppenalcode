@@ -199,3 +199,75 @@ function add(lawId, sIdx) {
         if (sub.fixF === null) inputF.value = '';
     }
 }
+
+// ... (load funkce zůstává stejná, zaměřme se na add a render)
+
+function render() {
+    const query = document.getElementById('searchInput').value.toLowerCase();
+    document.getElementById('lawsContainer').innerHTML = laws
+        .filter(l => l.title.toLowerCase().includes(query) || l.subs.some(s => s.text.toLowerCase().includes(query)))
+        .map(law => `
+        <div class="law-item">
+            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title} <span>▼</span></div>
+            <div class="law-content">
+                ${law.subs.map((sub, sIdx) => {
+                    // Pokud je v HTML data-fix-jail="0", políčko bude prázdné a zamčené
+                    // Pokud je tam např. "5", bude tam 5 a zamčené
+                    const jVal = sub.fixJ !== null ? sub.fixJ : "";
+                    const fVal = sub.fixF !== null ? sub.fixF : "";
+                    const jDis = sub.fixJ !== null ? "disabled" : "";
+                    const fDis = sub.fixF !== null ? "disabled" : "";
+                    
+                    return `
+                    <div class="row" style="display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #1c1f24;">
+                        <div style="flex:1;">${sub.html}</div>
+                        <input type="number" class="input-box" id="j_${law.id}_${sIdx}" value="${jVal}" ${jDis} placeholder="J">
+                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" value="${fVal}" ${fDis} placeholder="$">
+                        <button onclick="add('${law.id}', ${sIdx})" style="background:var(--accent); border:none; width:40px; height:35px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
+                    </div>`;
+                }).join('')}
+            </div>
+        </div>`).join('');
+}
+
+function add(lawId, sIdx) {
+    const law = laws.find(l => l.id === lawId);
+    const sub = law.subs[sIdx];
+    
+    const inputJ = document.getElementById(`j_${lawId}_${sIdx}`);
+    const inputF = document.getElementById(`f_${lawId}_${sIdx}`);
+
+    // STRIKTNÍ VALIDACE: Pokud je v HTML fix, použijeme ho. Pokud ne, vezmeme vstup.
+    let finalJ = sub.fixJ !== null ? sub.fixJ : (parseInt(inputJ.value) || 0);
+    let finalF = sub.fixF !== null ? sub.fixF : (parseInt(inputF.value) || 0);
+
+    // Kontrola minimálního trestu (jen u ne-fixních)
+    if (sub.fixJ === null && finalJ > 0 && finalJ < sub.minJ) {
+        showCustomAlert("PODMINIMÁLNÍ TREST", `Tento čin vyžaduje minimálně ${sub.minJ} let.`);
+        return;
+    }
+
+    // Kontrola maximálního trestu (jen u ne-fixních)
+    if (sub.fixJ === null && finalJ > sub.maxJ) {
+        showCustomAlert("NADMAXIMÁLNÍ TREST", `Maximální sazba je ${sub.maxJ} let.`);
+        return;
+    }
+
+    // Pokud je fix-jail nastaven na 0 a uživatel se pokusí něco přidat (nemělo by jít, ale pro jistotu)
+    if (sub.fixJ === 0 && finalJ > 0) finalJ = 0;
+    if (sub.fixF === 0 && finalF > 0) finalF = 0;
+
+    if (finalJ > 0 || finalF > 0) {
+        protocol.push({ 
+            title: law.title, 
+            subText: sub.text, 
+            jail: finalJ, 
+            fine: finalF, 
+            isZP: sub.isZP 
+        });
+        update();
+        // Vymažeme jen ta pole, která nejsou fixní
+        if (sub.fixJ === null) inputJ.value = '';
+        if (sub.fixF === null) inputF.value = '';
+    }
+}

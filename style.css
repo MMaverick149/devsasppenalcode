@@ -78,3 +78,20 @@ b, strong, .highlight { color: var(--accent) !important; font-weight: bold; }
 .input-box:focus {
     border-color: var(--accent);
 }
+
+/* ... předchozí styly ... */
+
+.input-box:disabled {
+    background: #050505 !important;
+    color: #ffcc00 !important; /* Fixní hodnota zůstane žlutá, ale pole je zamčené */
+    border: 1px solid #222 !important;
+    cursor: not-allowed;
+    opacity: 1;
+    font-weight: bold;
+}
+
+/* Zajištění, aby vyhledávání bylo vždy přes celou šířku pod loginem */
+.search-bar {
+    width: 100%;
+    box-sizing: border-box;
+}
