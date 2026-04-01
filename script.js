@@ -3,11 +3,11 @@ let protocol = [];
 
 function login() {
     document.getElementById('loginOverlay').style.display = 'none';
-    load(); // Načte data až po přihlášení
+    load();
 }
 
 function showAlert(msg) {
-    document.getElementById('alertMsg').innerText = msg;
+    document.getElementById('alertMsg').innerHTML = msg;
     document.getElementById('customAlert').style.display = 'flex';
 }
 
@@ -16,16 +16,18 @@ function closeAlert() {
 }
 
 async function load() {
-    const res = await fetch('tresty.html?v=' + Date.now());
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    
-    laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
-        const title = item.getAttribute('data-title');
-        let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
-        return { id: "law_"+idx, title, subs };
-    });
-    render();
+    try {
+        const res = await fetch('tresty.html?v=' + Date.now());
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        
+        laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
+            const title = item.getAttribute('data-title');
+            const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+            return { id: "law_"+idx, title, subs };
+        });
+        render();
+    } catch (e) { showAlert("CHYBA NAČÍTÁNÍ DAT!"); }
 }
 
 function parseSub(raw, html) {
@@ -44,9 +46,7 @@ function render() {
         .filter(l => l.title.toLowerCase().includes(query))
         .map(law => `
         <div class="law-item">
-            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">
-                ${law.title}
-            </div>
+            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title}</div>
             <div class="law-content">
                 ${law.subs.map((sub, sIdx) => `
                     <div class="row">
@@ -65,8 +65,26 @@ function add(lawId, sIdx) {
     const val = parseInt(document.getElementById(`j_${lawId}_${sIdx}`).value) || 0;
 
     if (val > 0 && (val < sub.minJ || (val > sub.maxJ && sub.maxJ !== 999))) {
-        showAlert(`LIMIT PŘEKROČEN! MAXIMÁLNĚ ${sub.maxJ} LET.`);
+        showAlert(`LIMIT PŘEKROČEN!<br>MAXIMÁLNĚ ${sub.maxJ} LET.`);
         return;
     }
-    // ... zbytek tvé funkce add a update ...
+
+    protocol.push({ lawId, title: law.title, jail: val });
+    update();
+}
+
+function update() {
+    document.getElementById('caseEntries').innerHTML = protocol.map(p => `
+        <div class="protocol-card">
+            <span style="color:var(--accent); font-weight:bold;">${p.title}</span>
+            <div style="text-align:right; font-weight:900;">${p.jail} J</div>
+        </div>`).join('');
+    
+    const totalJ = protocol.reduce((a, b) => a + b.jail, 0);
+    document.getElementById('sumJail').innerText = totalJ;
+}
+
+function newCase() {
+    protocol = [];
+    update();
 }
