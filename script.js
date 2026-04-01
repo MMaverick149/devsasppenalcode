@@ -17,7 +17,7 @@ async function load() {
             return {
                 id: `item_${cIdx}_${sIdx}`,
                 html: line.innerHTML,
-                text: raw,
+                text: raw, // Tady je celý text řádku včetně písmene a) b) c)
                 minJ: match ? parseInt(match[1]) : 0,
                 maxJ: raw.toLowerCase().includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
                 fixJ: line.getAttribute('data-fix-jail'),
@@ -70,12 +70,10 @@ function addToCase(subId, catId) {
         return;
     }
 
-    // KONTROLA PRO STÁTNÍHO ZÁSTUPCE (25+ LET)
     if (valJ >= 25) {
-        showAlert("POZOR: Trest 25 let a více (včetně Doživotí) vyžaduje okamžitou konzultaci se STÁTNÍM ZÁSTUPCEM!");
+        showAlert("POZOR: Trest 25 let a více vyžaduje konzultaci se STÁTNÍM ZÁSTUPCEM!");
     }
 
-    // VALIDACE LIMITŮ (pokud není fixní a je pod 25)
     if (!sub.fixJ && valJ > 0 && valJ < 25) {
         if (valJ < sub.minJ) {
             showAlert(`CHYBA: Minimální sazba je ${sub.minJ} let.`);
@@ -87,7 +85,14 @@ function addToCase(subId, catId) {
         }
     }
 
-    activeCase.push({ title: cat.title, jail: valJ, fine: valF });
+    // TADY JE OPRAVA: Ukládáme i 'subText', což je ten řádek začínající písmenem
+    activeCase.push({ 
+        title: cat.title, 
+        subText: sub.text, // Přenese text "c) úmyslně a zbraní..."
+        jail: valJ, 
+        fine: valF 
+    });
+    
     updateSidebar();
 
     if (!sub.fixJ) jInput.value = '';
@@ -99,7 +104,8 @@ function updateSidebar() {
     list.innerHTML = activeCase.map((item, idx) => `
         <div class="protocol-card">
             <b>${item.title}</b>
-            <div style="font-size:15px; font-weight:bold; margin-top:5px;">${item.jail} J | $${item.fine.toLocaleString()}</div>
+            <div class="protocol-subtext">${item.subText}</div>
+            <div class="protocol-values">${item.jail} J | $${item.fine.toLocaleString()}</div>
             <span style="position:absolute; right:10px; top:10px; cursor:pointer; opacity:0.5;" onclick="activeCase.splice(${idx},1);updateSidebar()">✕</span>
         </div>`).join('');
     
