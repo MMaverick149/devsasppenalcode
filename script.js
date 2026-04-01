@@ -5,7 +5,6 @@ window.onload = load;
 
 async function load() {
     try {
-        // Vynucení stažení nové verze zákoníku přidáním časového razítka
         const res = await fetch('tresty.html?nocache=' + Date.now());
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
@@ -29,7 +28,7 @@ async function load() {
             })
         }));
         render();
-    } catch (e) { console.error("Chyba:", e); }
+    } catch (e) { console.error("Chyba při načítání:", e); }
 }
 
 function render() {
@@ -74,8 +73,22 @@ function addToCase(subId, catId) {
         return;
     }
 
+    // --- SYSTÉMOVÁ UPOZORNĚNÍ ---
+    let alertMsg = "";
+
+    // 1. Kontrola Zbrojního průkazu
+    if (sub.hasZbrojak) {
+        alertMsg += "⚠️ ODEBRAT ZBROJNÍ PRŮKAZ!\nTento trest vyžaduje zabavení licence.\n\n";
+    }
+
+    // 2. Kontrola Státního zástupce (25+ let)
     if (valJ >= 25) {
-        showAlert("!!! KONTAKTOVAT STÁTNÍHO ZÁSTUPCE !!!\nTento trest musí schválit státní zástupce.");
+        alertMsg += "⚖️ KONTAKTOVAT STÁTNÍHO ZÁSTUPCE!\nTrest 25+ let (Doživotí) musí být schválen.";
+    }
+
+    // Pokud máme nějaké varování, zobrazíme ho
+    if (alertMsg !== "") {
+        showAlert(alertMsg);
     }
 
     activeCase.push({ 

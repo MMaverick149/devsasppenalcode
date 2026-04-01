@@ -49,12 +49,13 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-
 .sidebar-footer { padding: 20px; border-top: 1px solid #111; }
 .summary-line { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; }
 .label-celkem { font-weight: 900; color: #fff; font-size: 20px; }
-#sumJail { color: var(--blue-ui); }
-#sumFine { color: var(--green-ui); }
+#sumJail { color: var(--blue-ui); font-weight: 900; }
+#sumFine { color: var(--green-ui); font-weight: 900; }
 .unit-j { color: var(--blue-ui); font-size: 16px; }
 .unit-f { color: var(--green-ui); font-size: 16px; }
 .new-case-btn { width: 100%; background: var(--blue-ui); border: none; color: #fff; padding: 15px; font-weight: 900; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
 
 .alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 10000; }
-.alert-box { background: #000; border: 2px solid var(--red-tag); padding: 30px; text-align: center; }
-.alert-btn { background: var(--red-tag); border: none; color: #fff; padding: 10px 30px; cursor: pointer; font-weight: bold; margin-top: 15px; }
+.alert-box { background: #000; border: 2px solid var(--red-tag); padding: 30px; text-align: center; max-width: 400px; border-radius: 8px; }
+.alert-header { color: var(--red-tag); font-weight: 900; margin-bottom: 10px; letter-spacing: 1px; }
+.alert-btn { background: var(--red-tag); border: none; color: #fff; padding: 12px 40px; cursor: pointer; font-weight: bold; margin-top: 15px; border-radius: 4px; }
