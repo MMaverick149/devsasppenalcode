@@ -1,97 +1,141 @@
-:root { --bg: #0a0b0d; --accent: #ffcc00; --border: #1c1f24; --card: #111317; --red: #ff4d4d; --blue: #00a2ff; }
-
-body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
-
-/* FIX VYHLEDÁVÁNÍ - PŘES CELOU ŠÍŘKU */
-.search-bar { background: #000; padding: 15px 20px; border-bottom: 2px solid var(--border); display: flex; align-items: center; }
-#searchInput { 
-    background: #0d0e12; border: 1px solid #333; color: #fff; padding: 12px 15px; 
-    flex: 1; border-radius: 5px; outline: none; font-size: 16px; 
+:root {
+    --accent: #ffcc00;
+    --bg: #050505;
+    --card: #0d0e11;
+    --border: #1c1f24;
+    --text: #e0e0e0;
 }
 
-#mainApp { display: flex; height: calc(100vh - 75px); width: 100%; }
-
-/* LEVÝ PANEL */
-#leftPanel { flex: 3; overflow-y: auto; padding: 25px; border-right: 2px solid var(--border); }
-
-/* ŽLUTÝ TUČNÝ TEXT - GLOBAL */
-b, strong, .highlight { color: var(--accent) !important; font-weight: bold; }
-
-/* SEKCE */
-.law-item { margin-bottom: 10px; background: var(--card); border: 1px solid var(--border); border-radius: 4px; }
-.law-header { padding: 15px; color: var(--accent); font-weight: 900; cursor: pointer; display: flex; justify-content: space-between; text-transform: uppercase; }
-.law-content { display: none; padding: 10px 20px; background: #0a0b0d; }
-.law-item.active .law-content { display: block; }
-
-/* PRAVÝ PANEL - FIX DESIGN */
-#rightPanel { flex: 1.2; background: #0a0b0d; display: flex; flex-direction: column; }
-#caseEntries { flex: 1; overflow-y: auto; padding: 20px; }
-
-.protocol-card { 
-    background: #111317; padding: 15px; border-radius: 8px; border-left: 5px solid var(--accent); 
-    margin-bottom: 15px; position: relative; border-top: 1px solid #222;
-}
-.p-header { color: var(--accent); font-weight: 900; font-size: 15px; margin-bottom: 5px; display: block; }
-.p-text { color: #ccc; font-size: 13px; margin-bottom: 10px; display: block; }
-.p-footer { text-align: right; font-size: 20px; font-weight: 900; color: var(--accent); }
-
-/* SPODNÍ SOUČET A MODRÉ TLAČÍTKO */
-.summary-box { background: #0d0e12; border-top: 2px solid var(--border); padding: 20px; }
-.total-text { font-size: 22px; font-weight: 900; margin-bottom: 15px; display: flex; justify-content: space-between; }
-.total-val { color: var(--blue); }
-.new-case-btn { 
-    background: var(--blue); color: #fff; border: none; width: 100%; padding: 16px; 
-    font-weight: 900; font-size: 17px; border-radius: 6px; cursor: pointer; text-transform: uppercase;
+body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', sans-serif;
+    margin: 0;
+    overflow-x: hidden;
 }
 
-/* VAROVÁNÍ ( image_a9cda2.png ) */
-.alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 10000; display: none; justify-content: center; align-items: center; }
-.alert-box { background: #000; border: 2px solid var(--red); border-radius: 20px; width: 500px; padding: 40px; text-align: center; }
-.btn-red { background: var(--red); color: #fff; border: none; padding: 12px 45px; font-weight: 900; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
-.btn-black { background: #111; color: #fff; border: 1px solid #333; padding: 12px 45px; font-weight: 900; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
-
-/* ... předchozí styly zůstávají ... */
-
-.input-box:disabled {
-    background: #1a1c22 !important;
-    color: #555 !important;
-    cursor: not-allowed;
-    border-color: #222 !important;
+/* Login Screen */
+#loginScreen {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: #000;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
 }
 
-/* Zvýraznění tučného žlutého textu v protokolu */
-.protocol-card b, .protocol-card strong {
-    color: var(--accent) !important;
+.login-btn {
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    padding: 12px 40px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+.login-btn:hover {
+    background: var(--accent);
+    color: #000;
+}
+
+/* Layout */
+.container {
+    display: none; /* Skryto do přihlášení */
+    display: flex;
+    min-height: 100vh;
+}
+
+.main-side {
+    flex: 1;
+    padding: 20px;
+    max-width: calc(100% - 350px);
+}
+
+/* Sidebar - Sticky a Auto-scroll */
+.sidebar {
+    width: 350px;
+    background: #08090a;
+    border-left: 1px solid var(--border);
+    position: fixed;
+    right: 0;
+    top: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.case-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    scroll-behavior: smooth;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    background: #0a0b0d;
+    border-top: 1px solid var(--border);
+}
+
+/* Tlačítka a vstupy */
+.add-btn {
+    background: var(--accent);
+    border: none;
+    width: 35px;
+    height: 35px;
+    border-radius: 4px;
     font-weight: 900;
+    cursor: pointer;
 }
 
-/* ... předchozí styly ... */
+.input-box {
+    background: #111;
+    border: 1px solid #222;
+    color: #fff;
+    padding: 8px;
+    width: 60px;
+    border-radius: 4px;
+    text-align: center;
+}
 
 .input-box:disabled {
     background: #000 !important;
-    color: #444 !important; /* Šedý text pro fixní hodnoty */
-    border: 1px solid #1a1a1a !important;
+    color: var(--accent) !important;
+    border-color: #1a1a1a !important;
     cursor: not-allowed;
-    opacity: 0.6;
+    opacity: 0.8;
 }
 
-.input-box:focus {
-    border-color: var(--accent);
+/* Protocol Card */
+.protocol-card {
+    background: #111;
+    border-left: 3px solid var(--accent);
+    padding: 12px;
+    margin-bottom: 10px;
+    position: relative;
 }
 
-/* ... předchozí styly ... */
+.p-footer b { color: var(--accent); }
 
-.input-box:disabled {
-    background: #050505 !important;
-    color: #ffcc00 !important; /* Fixní hodnota zůstane žlutá, ale pole je zamčené */
-    border: 1px solid #222 !important;
-    cursor: not-allowed;
-    opacity: 1;
-    font-weight: bold;
+/* Alert Box */
+.alert-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 11000;
 }
 
-/* Zajištění, aby vyhledávání bylo vždy přes celou šířku pod loginem */
-.search-bar {
-    width: 100%;
-    box-sizing: border-box;
+.alert-box {
+    background: #111;
+    border: 1px solid #f44336;
+    padding: 30px;
+    text-align: center;
+    max-width: 400px;
+    border-radius: 8px;
 }

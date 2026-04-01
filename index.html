@@ -2,50 +2,55 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <title>SASP MDT</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SASP Terminál</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="loginOverlay">
-    <div class="login-card">
-        <h1>SASP TERMINÁL</h1>
-        <p style="color:#555; letter-spacing:5px;">SECURE ACCESS GATEWAY</p>
-        <button class="login-btn" onclick="login()">VSTOUPIT DO EVIDENCE</button>
+    <div id="loginScreen">
+        <h1 style="color:var(--accent); letter-spacing: 5px; margin: 0;">SASP TERMINÁL</h1>
+        <p style="color:#444; font-size: 10px; margin-bottom: 40px; letter-spacing: 2px;">SECURE ACCESS GATEWAY</p>
+        <button class="login-btn" onclick="enterEvidence()">VSTOUPIT DO EVIDENCE</button>
+        <p style="position: absolute; bottom: 20px; color: #222; font-size: 11px;">© 2026 SASP Nathaniel Hartman</p>
     </div>
-</div>
 
-<div id="customAlert" class="alert-overlay">
-    <div class="alert-box">
-        <div style="color:var(--red); font-size:12px; font-weight:bold; letter-spacing:2px; margin-bottom:10px;">KONTROLA ZÁKONNOSTI</div>
-        <div class="alert-icon">🚫</div>
-        <h2>NADMAXIMÁLNÍ TREST</h2>
-        <p id="alertMsg" style="color:#aaa; font-size:18px;"></p>
-        <div class="alert-footer">
-            <button class="btn-red" onclick="closeAlert()">ANO</button>
-            <button class="btn-black" onclick="closeAlert()">NE</button>
+    <div id="mainContent" class="container">
+        <div class="main-side">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" class="search-bar" placeholder="Hledat v zákoníku (např. §7)..." oninput="render()">
+            </div>
+            <div id="lawsContainer"></div>
+        </div>
+        
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>AKTUÁLNÍ PŘÍPAD</h3>
+            </div>
+            
+            <div id="caseEntries" class="case-list">
+                </div>
+            
+            <div class="sidebar-footer">
+                <div class="summary">
+                    <div class="sum-row">
+                        <span>CELKEM:</span>
+                        <span class="sum-val"><span id="sumJail">0</span> J | $<span id="sumFine">0</span></span>
+                    </div>
+                </div>
+                <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
+            </div>
         </div>
     </div>
-</div>
 
-<div class="search-bar">
-    <input type="text" id="searchInput" placeholder="Hledat v zákoníku (např. §7)..." oninput="render()">
-</div>
-
-<div id="mainApp">
-    <div id="leftPanel">
-        <div id="lawsContainer"></div>
-    </div>
-    <div id="rightPanel">
-        <div style="padding:20px 20px 0 20px;"><h3 style="margin:0; letter-spacing:1px;">AKTUÁLNÍ PŘÍPAD</h3></div>
-        <div id="caseEntries"></div>
-        <div class="summary-box">
-            <div class="total-text">CELKEM: <span><span class="total-val" id="sumJail">0</span> J | <span style="color:#2ecc71;">$</span><span style="color:#2ecc71;" id="sumFine">0</span></span></div>
-            <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
+    <div id="customAlert" class="alert-overlay" style="display: none;">
+        <div class="alert-box">
+            <div class="alert-icon">🚫</div>
+            <h2 id="alertTitle">VAROVÁNÍ</h2>
+            <p id="alertMsg"></p>
+            <button onclick="closeAlert()">ROZUMÍM</button>
         </div>
     </div>
-</div>
 
-<script src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
