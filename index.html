@@ -7,6 +7,23 @@
 </head>
 <body>
 
+<div id="customAlert" class="alert-overlay">
+    <div class="alert-box">
+        <div class="alert-header">VAROVÁNÍ SYSTÉMU</div>
+        <div id="alertMsg" class="alert-body"></div>
+        <button class="alert-btn" onclick="closeAlert()">OK</button>
+    </div>
+</div>
+
+<div id="loginOverlay">
+    <div class="login-card">
+        <h1>SASP TERMINÁL</h1>
+        <p>SECURE ACCESS GATEWAY</p>
+        <button class="login-btn" onclick="login()">VSTOUPIT DO EVIDENCE</button>
+        <div class="copyright">© 2026 SASP Nathaniel Hartman</div>
+    </div>
+</div>
+
 <div class="search-bar">
     <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()">
 </div>
@@ -15,11 +32,9 @@
     <div id="leftPanel">
         <div id="lawsContainer"></div>
     </div>
-
     <div id="rightPanel">
         <h3 style="margin-top:0; letter-spacing: 1px;">AKTUÁLNÍ PŘÍPAD</h3>
         <div id="caseEntries"></div>
-        
         <div class="summary-box">
             <div class="total-line">CELKEM: <span id="sumJail">0</span> J | <span id="sumFine">$0</span></div>
             <button class="new-case-btn" onclick="newCase()">Nový případ</button>
