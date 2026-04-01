@@ -4,29 +4,31 @@ let activeCase = [];
 window.onload = load;
 
 async function load() {
-    const res = await fetch('tresty.html?v=' + Date.now());
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    
-    lawsData = Array.from(doc.querySelectorAll('.law-item')).map((cat, cIdx) => ({
-        id: "cat_" + cIdx,
-        title: cat.getAttribute('data-title') || "Neznámá sekce",
-        subs: Array.from(cat.querySelectorAll('.sub-line')).map((line, sIdx) => {
-            const raw = line.innerText;
-            const match = raw.match(/sazba\s+(\d+)-(\d+)/i) || raw.match(/od\s+(\d+)\s+let/i);
-            return {
-                id: `item_${cIdx}_${sIdx}`,
-                html: line.innerHTML,
-                text: raw,
-                hasZbrojak: raw.toLowerCase().includes("zbrojní průkaz"), // Detekce zbrojáku
-                minJ: match ? parseInt(match[1]) : 0,
-                maxJ: raw.toLowerCase().includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
-                fixJ: line.getAttribute('data-fix-jail'),
-                fixF: line.getAttribute('data-fix-fine')
-            };
-        })
-    }));
-    render();
+    try {
+        const res = await fetch('tresty.html?v=' + Date.now());
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        
+        lawsData = Array.from(doc.querySelectorAll('.law-item')).map((cat, cIdx) => ({
+            id: "cat_" + cIdx,
+            title: cat.getAttribute('data-title') || "Neznámá sekce",
+            subs: Array.from(cat.querySelectorAll('.sub-line')).map((line, sIdx) => {
+                const rawText = line.innerText;
+                const match = rawText.match(/sazba\s+(\d+)-(\d+)/i) || rawText.match(/od\s+(\d+)\s+let/i);
+                return {
+                    id: `item_${cIdx}_${sIdx}`,
+                    fullHtml: line.innerHTML, // Ukládáme kompletní HTML včetně písmen a) b) c)
+                    plainText: rawText,
+                    hasZbrojak: rawText.toLowerCase().includes("zbrojní průkaz"),
+                    minJ: match ? parseInt(match[1]) : 0,
+                    maxJ: rawText.toLowerCase().includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
+                    fixJ: line.getAttribute('data-fix-jail'),
+                    fixF: line.getAttribute('data-fix-fine')
+                };
+            })
+        }));
+        render();
+    } catch (e) { console.error("Chyba při načítání zákoníku:", e); }
 }
 
 function render() {
@@ -34,7 +36,7 @@ function render() {
     const container = document.getElementById('lawsContainer');
     
     container.innerHTML = lawsData.map(cat => {
-        const hasMatch = cat.title.toLowerCase().includes(query) || cat.subs.some(s => s.text.toLowerCase().includes(query));
+        const hasMatch = cat.title.toLowerCase().includes(query) || cat.subs.some(s => s.plainText.toLowerCase().includes(query));
         if (!hasMatch && query !== "") return "";
 
         return `
@@ -45,7 +47,7 @@ function render() {
             <div class="category-content">
                 ${cat.subs.map(sub => `
                     <div class="punishment-row">
-                        <div style="flex:1; font-size:13px;">${sub.html}</div>
+                        <div style="flex:1; font-size:13px;">${sub.fullHtml}</div>
                         <div style="display:flex; gap:5px;">
                             <input type="number" class="input-box" id="j_${sub.id}" placeholder="J" value="${sub.fixJ || ''}" ${sub.fixJ ? 'disabled' : ''}>
                             <input type="number" class="input-box" id="f_${sub.id}" placeholder="$" value="${sub.fixF || ''}" ${sub.fixF ? 'disabled' : ''}>
@@ -71,13 +73,15 @@ function addToCase(subId, catId) {
         return;
     }
 
+    // Varování pro SZ
     if (valJ >= 25) {
-        showAlert("POZOR: Trest 25 let a více (Doživotí) vyžaduje konzultaci se STÁTNÍM ZÁSTUPCEM!");
+        showAlert("!!! KONTAKTOVAT STÁTNÍHO ZÁSTUPCE !!!\nTento trest musí být schválen.");
     }
 
+    // Uložení do případu
     activeCase.push({ 
         title: cat.title, 
-        subText: sub.text, 
+        desc: sub.plainText, 
         zbrojak: sub.hasZbrojak,
         jail: valJ, 
         fine: valF 
@@ -97,7 +101,7 @@ function updateSidebar() {
                 <span class="card-title">${item.title}</span>
                 ${item.zbrojak ? '<span class="tag-zbrojak">Zbrojní Průkaz</span>' : ''}
             </div>
-            <div class="card-desc">${item.subText}</div>
+            <div class="card-desc">${item.desc}</div>
             <div class="card-footer">${item.jail} LET | $${item.fine.toLocaleString()}</div>
         </div>`).join('');
     
