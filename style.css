@@ -1,115 +1,50 @@
 :root {
     --accent: #ffcc00;
-    --bg-dark: #050505;
-    --card-bg: #0d0e11;
+    --bg: #050505;
+    --card: #0d0e11;
     --border: #1c1f24;
-    --text-main: #e0e0e0;
-    --sidebar-bg: #08090a;
+    --text: #e0e0e0;
 }
 
-body {
-    background: var(--bg-dark);
-    color: var(--text-main);
-    font-family: 'Segoe UI', Roboto, sans-serif;
-    margin: 0;
-    overflow: hidden;
-}
+body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
 
-/* Přihlášení */
-#loginScreen {
-    position: fixed;
-    inset: 0;
-    background: #000;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-.terminal-title { color: #fff; letter-spacing: 4px; margin-bottom: 5px; }
-.subtitle { color: #555; font-size: 12px; margin-bottom: 30px; }
-.login-btn { 
-    background: transparent; border: 1px solid #444; color: #fff; 
-    padding: 10px 25px; cursor: pointer; transition: 0.3s;
-}
-.login-btn:hover { background: #fff; color: #000; }
-.copyright { position: absolute; bottom: 20px; color: #333; font-size: 11px; }
+/* Login */
+#loginScreen { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
+.terminal-title { color: var(--accent); letter-spacing: 5px; font-size: 30px; }
+.login-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 12px 40px; cursor: pointer; font-weight: bold; }
 
-/* Hlavní layout */
+/* Layout */
 .app-container { height: 100vh; display: flex; flex-direction: column; }
-.top-nav { 
-    height: 50px; background: #000; display: flex; align-items: center; 
-    padding: 0 20px; border-bottom: 1px solid var(--border); 
-}
-#searchInput { 
-    background: #0a0a0a; border: 1px solid #222; color: #fff; 
-    padding: 8px 15px; width: 400px; border-radius: 3px;
-}
+.top-nav { height: 60px; background: #08090a; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); }
+#searchInput { background: #111; border: 1px solid #333; color: #fff; padding: 10px; width: 350px; border-radius: 4px; }
 
 .content-wrapper { display: flex; flex: 1; overflow: hidden; }
-
-/* Kategorie a Zákoník */
 .laws-section { flex: 1; overflow-y: auto; padding: 20px; }
-.law-category { 
-    background: var(--card-bg); border: 1px solid var(--border); 
-    margin-bottom: 8px; border-radius: 4px; 
-}
+
+/* KATEGORIE (UZAVÍRATELNÉ) */
+.law-category { background: var(--card); border: 1px solid var(--border); margin-bottom: 10px; border-radius: 4px; }
 .category-header { 
-    padding: 15px; color: var(--accent); font-weight: bold; 
-    cursor: pointer; display: flex; justify-content: space-between;
-    text-transform: uppercase; font-size: 14px;
+    background: #121417; color: var(--accent); padding: 15px; 
+    font-weight: bold; cursor: pointer; display: flex; justify-content: space-between;
+    text-transform: uppercase; letter-spacing: 1px;
 }
-.category-header:hover { background: #121417; }
-.category-header::after { content: '▼'; font-size: 10px; opacity: 0.5; }
-.category-content { display: none; padding: 0 10px 10px 10px; border-top: 1px solid #16191d; }
-.law-category.active .category-content { display: block; }
+.category-header:hover { background: #1a1d22; }
+.category-header::after { content: '▼'; font-size: 12px; }
 .law-category.active .category-header::after { content: '▲'; }
 
-/* Jednotlivé tresty */
-.punishment-row { 
-    display: flex; align-items: center; gap: 15px; padding: 12px; 
-    border-bottom: 1px solid #16191d; transition: 0.2s;
-}
-.punishment-row:hover { background: #111317; }
-.law-text { flex: 1; font-size: 13px; line-height: 1.4; color: #bbb; }
-.law-text b { color: var(--accent); }
+.category-content { display: none; padding: 10px; border-top: 1px solid var(--border); }
+.law-category.active .category-content { display: block; }
 
-.input-group { display: flex; gap: 5px; }
-.val-input { 
-    background: #000; border: 1px solid #333; color: var(--accent); 
-    width: 50px; padding: 6px; text-align: center; border-radius: 3px;
-}
-.add-btn { 
-    background: var(--accent); border: none; color: #000; 
-    width: 32px; height: 32px; font-weight: bold; cursor: pointer; border-radius: 3px;
-}
+/* Řádky trestů */
+.punishment-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #16191d; }
+.punishment-row:last-child { border-bottom: none; }
+.add-btn { background: var(--accent); border: none; width: 35px; height: 35px; font-weight: 900; cursor: pointer; border-radius: 4px; }
+.input-box { background: #000; border: 1px solid #333; color: var(--accent); width: 55px; padding: 8px; text-align: center; border-radius: 4px; }
+.input-box:disabled { opacity: 0.5; cursor: not-allowed; }
 
-/* Sidebar - Aktuální případ */
-.sidebar { width: 380px; background: var(--sidebar-bg); border-left: 1px solid var(--border); display: flex; flex-direction: column; }
-.sidebar-header { padding: 15px; font-weight: bold; border-bottom: 1px solid var(--border); font-size: 14px; }
+/* Sidebar */
+.sidebar { width: 380px; background: #08090a; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
 .case-list { flex: 1; overflow-y: auto; padding: 15px; }
-
-.protocol-item { 
-    background: #0d0e11; border-left: 3px solid var(--accent); 
-    padding: 12px; margin-bottom: 10px; position: relative; border-radius: 2px;
-}
-.protocol-item .title { color: var(--accent); font-weight: bold; font-size: 12px; display: block; margin-bottom: 5px; }
-.protocol-item .desc { font-size: 11px; color: #888; display: block; margin-bottom: 8px; }
-.protocol-item .values { font-weight: bold; font-size: 15px; text-align: right; }
-.remove-item { position: absolute; top: 8px; right: 8px; color: #444; cursor: pointer; font-size: 12px; }
-
+.protocol-card { background: #111; border-left: 4px solid var(--accent); padding: 12px; margin-bottom: 10px; position: relative; }
 .sidebar-footer { padding: 20px; border-top: 1px solid var(--border); background: #050505; }
-.total-line { font-weight: bold; font-size: 18px; margin-bottom: 15px; text-align: right; }
-.total-line span { color: #00aaff; }
-.new-case-btn { 
-    width: 100%; background: #00aaff; border: none; color: #fff; 
-    padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px;
-}
-
-/* Alert modál */
-.alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
-.alert-box { background: #0d0e11; border: 2px solid #ff4444; width: 450px; border-radius: 8px; overflow: hidden; }
-.alert-header { background: #1a1010; color: #ff4444; padding: 10px; font-size: 11px; text-align: center; letter-spacing: 2px; }
-.alert-content { padding: 30px; text-align: center; }
-.warning-icon { font-size: 50px; margin-bottom: 15px; }
-.alert-btns button { background: #ff4444; border: none; color: white; padding: 10px 40px; cursor: pointer; font-weight: bold; border-radius: 4px; }
+.new-case-btn { width: 100%; background: #00aaff; border: none; color: #fff; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px; }
