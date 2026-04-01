@@ -3,129 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <title>SASP MDT - TERMINÁL</title>
-    <style>
-        :root { --bg: #0a0b0d; --accent: #ffcc00; --border: #2c2e33; }
-        body { margin: 0; background: var(--bg); color: #fff; font-family: sans-serif; }
-        
-        #mainApp { display: flex; height: 100vh; width: 100%; }
-        #leftPanel { flex: 3; border-right: 2px solid var(--border); overflow-y: auto; padding: 20px; }
-        #rightPanel { flex: 1.2; background: #111317; padding: 20px; }
-        
-        .law-item { margin-bottom: 10px; border: 1px solid var(--border); background: #16181d; border-radius: 5px; }
-        .law-header { padding: 15px; color: var(--accent); font-weight: bold; cursor: pointer; background: #1c1f24; }
-        .law-content { padding: 10px; display: none; }
-        .row { display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #222; }
-        
-        .highlight { color: var(--accent); font-weight: bold; }
-        .input-box { width: 60px; padding: 5px; background: #000; border: 1px solid #444; color: var(--accent); text-align: center; }
-        .add-btn { background: var(--accent); border: none; padding: 5px 15px; cursor: pointer; font-weight: bold; }
-        
-        .protocol-card { background: #000; padding: 15px; border-left: 4px solid var(--accent); margin-bottom: 10px; position: relative; }
-        .badge { background: #ff4444; font-size: 10px; padding: 2px 5px; border-radius: 3px; margin-left: 5px; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+<div class="search-bar">
+    <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()">
+</div>
+
 <div id="mainApp">
     <div id="leftPanel">
-        <h2 style="color:var(--accent)">EVIDENCE TRESTNÍCH ČINŮ</h2>
         <div id="lawsContainer"></div>
     </div>
+
     <div id="rightPanel">
-        <h3>AKTUÁLNÍ PŘÍPAD</h3>
+        <h3 style="margin-top:0; letter-spacing: 1px;">AKTUÁLNÍ PŘÍPAD</h3>
         <div id="caseEntries"></div>
-        <hr border="1" color="#2c2e33">
-        <div id="summary" style="font-size: 20px; font-weight: bold;">CELKEM: <span id="sumJail">0</span> J</div>
-        <button onclick="protocol=[]; update();" style="width:100%; margin-top:10px; padding:10px; cursor:pointer;">VYČISTIT</button>
+        
+        <div class="summary-box">
+            <div class="total-line">CELKEM: <span id="sumJail">0</span> J | <span id="sumFine">$0</span></div>
+            <button class="new-case-btn" onclick="newCase()">Nový případ</button>
+        </div>
     </div>
 </div>
 
-<script>
-    let laws = [];
-    let protocol = [];
-
-    // Spustí se hned po načtení stránky
-    window.onload = () => load();
-
-    async function load() {
-        try {
-            const res = await fetch('tresty.html?v=' + Date.now());
-            if (!res.ok) throw new Error("Nelze načíst tresty.html");
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            
-            laws = Array.from(doc.querySelectorAll('.law-item')).map((item, lIdx) => {
-                const title = item.getAttribute('data-title');
-                let subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
-
-                // Oprava konkrétního bodu §7 c)
-                if (title && title.includes('§7')) {
-                    subs = subs.map(s => {
-                        if (s.text.toLowerCase().includes('c)')) {
-                            return parseSub("c) úmyslně a zbraní střelnou sazba 3-10 let", "c) úmyslně a zbraní střelnou <b class='highlight'>sazba 3-10 let</b>");
-                        }
-                        return s;
-                    });
-                }
-
-                return { title, subs };
-            });
-            render();
-        } catch (e) { console.error("Chyba:", e); }
-    }
-
-    function parseSub(raw, html) {
-        const txt = raw.toLowerCase();
-        const dashMatch = txt.match(/sazba\s+(\d+)-(\d+)/i);
-        const rangeMatch = txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+|doživotí)/i);
-        let min = 0; let max = 999;
-        if (dashMatch) { min = parseInt(dashMatch[1]); max = parseInt(dashMatch[2]); }
-        else if (rangeMatch) { min = parseInt(rangeMatch[1]); max = rangeMatch[2].includes("doživotí") ? 99 : parseInt(rangeMatch[2]); }
-
-        return { 
-            text: raw, html, minJ: min, maxJ: max,
-            isZP: raw.toUpperCase().includes("ZBROJNÍ"),
-            hasJ: txt.includes("let") || txt.includes("sazba")
-        };
-    }
-
-    function render() {
-        document.getElementById('lawsContainer').innerHTML = laws.map((law, lIdx) => `
-            <div class="law-item">
-                <div class="law-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'block' ? 'none' : 'block'">${law.title}</div>
-                <div class="law-content">
-                    ${law.subs.map((sub, sIdx) => `
-                        <div class="row">
-                            <div style="flex:1">${sub.html}</div>
-                            <input type="number" class="input-box" id="j_${lIdx}_${sIdx}" placeholder="J">
-                            <button class="add-btn" onclick="add(${lIdx}, ${sIdx})">+</button>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    function add(lIdx, sIdx) {
-        const val = parseInt(document.getElementById(`j_${lIdx}_${sIdx}`).value) || 0;
-        const sub = laws[lIdx].subs[sIdx];
-        
-        if (val < sub.minJ && val !== 0) return alert(`Minimálně ${sub.minJ} let!`);
-        if (val > sub.maxJ && sub.maxJ !== 999) return alert(`Maximálně ${sub.maxJ} let!`);
-
-        protocol.push({ title: laws[lIdx].title, jail: val, isZP: sub.isZP });
-        update();
-    }
-
-    function update() {
-        document.getElementById('caseEntries').innerHTML = protocol.map((p, i) => `
-            <div class="protocol-card">
-                <b>${p.title}</b> ${p.isZP ? '<span class="badge">ZP</span>' : ''}
-                <div style="color:var(--accent); text-align:right">${p.jail} J</div>
-            </div>
-        `).join('');
-        document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
-    }
-</script>
+<script src="script.js"></script>
 </body>
 </html>
