@@ -1,44 +1,42 @@
 :root { --bg: #0a0b0d; --accent: #ffcc00; --border: #1c1f24; --card: #111317; --red: #ff4444; }
 
-body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
 
-/* LOGIN */
+/* FIX PRO LOGIN - musí být přes všechno */
 #loginOverlay { 
-    position: fixed; inset: 0; background: #000; z-index: 9999;
-    display: flex; justify-content: center; align-items: center; text-align: center;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; 
 }
-.login-card h1 { color: var(--accent); font-size: 40px; margin: 0; letter-spacing: 3px; }
-.login-card p { color: #555; letter-spacing: 5px; margin-bottom: 40px; }
-.login-btn { background: #fff; border: none; padding: 15px 40px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
 
-/* CUSTOM ALERT (Červené okno) */
-.alert-overlay { 
-    position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; 
-    display: none; justify-content: center; align-items: center; 
+/* FIX PRO VAROVÁNÍ - vycentrované červené okno */
+#customAlert { 
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.9); z-index: 10000; display: none; justify-content: center; align-items: center; 
 }
-.alert-box { 
-    background: #111; border: 2px solid var(--red); width: 350px; text-align: center; 
-    box-shadow: 0 0 30px rgba(255, 68, 68, 0.2);
-}
-.alert-header { background: var(--red); color: #000; padding: 10px; font-weight: 900; }
-.alert-body { padding: 30px; font-size: 18px; color: #fff; font-weight: bold; }
-.alert-btn { background: #fff; border: none; width: 100%; padding: 15px; cursor: pointer; font-weight: 900; }
+.alert-box { background: #111; border: 2px solid var(--red); width: 400px; text-align: center; box-shadow: 0 0 50px rgba(255,0,0,0.3); }
+.alert-header { background: var(--red); color: #000; padding: 10px; font-weight: 900; text-transform: uppercase; }
+.alert-body { padding: 30px; font-size: 20px; font-weight: bold; }
+.alert-btn { background: #fff; border: none; width: 100%; padding: 15px; cursor: pointer; font-weight: 900; text-transform: uppercase; }
 
-/* SEKCE (Zavřené/Otevřené) */
-.law-item { margin-bottom: 10px; background: var(--card); border: 1px solid var(--border); }
-.law-header { padding: 15px; color: var(--accent); font-weight: 900; cursor: pointer; background: #16181d; display: flex; justify-content: space-between; }
-.law-header::after { content: '+'; }
-.law-item.active .law-header::after { content: '-'; }
-.law-content { display: none; padding: 10px 20px; }
-.law-item.active .law-content { display: block; }
-
-/* ZBYTEK (Zkráceno pro přehlednost) */
-#mainApp { display: flex; height: calc(100vh - 60px); }
+/* APP LAYOUT */
+#mainApp { display: flex; height: calc(100vh - 60px); width: 100%; }
+.search-bar { background: #000; padding: 15px; border-bottom: 2px solid var(--border); }
 #leftPanel { flex: 3; overflow-y: auto; padding: 20px; border-right: 2px solid var(--border); }
-#rightPanel { flex: 1.2; padding: 20px; display: flex; flex-direction: column; }
-.row { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #1c1f24; padding: 10px 0; }
-.highlight, b { color: var(--accent) !important; }
-.input-box { background: #000; border: 1px solid #333; color: var(--accent); padding: 5px; width: 45px; text-align: center; }
-.add-btn { background: var(--accent); border: none; padding: 5px 12px; font-weight: bold; cursor: pointer; }
-.protocol-card { background: #000; padding: 12px; border-left: 4px solid var(--accent); margin-bottom: 8px; }
-.new-case-btn { background: #eee; border: none; padding: 15px; font-weight: 900; cursor: pointer; margin-top: auto; }
+#rightPanel { flex: 1.2; padding: 20px; display: flex; flex-direction: column; background: var(--card); }
+
+/* SEKCE - defaultně zavřené */
+.law-item { margin-bottom: 10px; border: 1px solid var(--border); }
+.law-header { padding: 15px; color: var(--accent); font-weight: bold; cursor: pointer; background: #16181d; display: flex; justify-content: space-between; }
+.law-header::after { content: '▼'; font-size: 12px; opacity: 0.5; }
+.law-content { display: none; padding: 10px 20px; background: #0d0e12; }
+
+/* Aktivní sekce */
+.law-item.active .law-content { display: block; }
+.law-item.active .law-header { border-bottom: 1px solid var(--border); }
+.law-item.active .law-header::after { content: '▲'; }
+
+/* Zbytek (vstupy atd.) */
+.row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #1c1f24; }
+.highlight { color: var(--accent); font-weight: bold; }
+.input-box { background: #000; border: 1px solid #333; color: var(--accent); width: 50px; padding: 8px; text-align: center; }
+.add-btn { background: var(--accent); border: none; padding: 8px 15px; font-weight: bold; cursor: pointer; }
