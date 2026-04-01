@@ -13,7 +13,7 @@
 
     <div id="mainContent" class="app-container" style="display: none;">
         <nav class="top-nav">
-            <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()">
+            <input type="text" id="searchInput" placeholder="Hledat v zákoníku (např. §7)..." oninput="render()">
         </nav>
 
         <div class="content-wrapper">
@@ -25,7 +25,9 @@
                 <div class="sidebar-header">AKTUÁLNÍ PŘÍPAD</div>
                 <div id="caseEntries" class="case-list"></div>
                 <div class="sidebar-footer">
-                    <div class="summary">CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span></div>
+                    <div class="summary">
+                        CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span>
+                    </div>
                     <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
                 </div>
             </aside>
@@ -34,7 +36,7 @@
 
     <div id="customAlert" class="alert-overlay" style="display: none;">
         <div class="alert-box">
-            <div class="alert-header">SASP SYSTÉMOVÁ KONTROLA</div>
+            <div class="alert-header">SYSTÉMOVÁ KONTROLA SASP</div>
             <p id="alertMsg"></p>
             <button class="alert-btn" onclick="closeAlert()">ROZUMÍM</button>
         </div>
