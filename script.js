@@ -8,7 +8,6 @@ async function load() {
     const html = await res.text();
     const doc = new DOMParser().parseFromString(html, 'text/html');
     
-    // Načtení kategorií ze souboru tresty.html
     lawsData = Array.from(doc.querySelectorAll('.law-item')).map((cat, cIdx) => ({
         id: "cat_" + cIdx,
         title: cat.getAttribute('data-title') || "Neznámá sekce",
@@ -52,9 +51,9 @@ function render() {
                     <div class="punishment-row">
                         <div style="flex:1; font-size:13px;">${sub.html}</div>
                         <div style="display:flex; gap:5px;">
-                            <input type="number" class="input-box" id="j_${sub.id}" placeholder="J" value="${sub.fixJ || ''}" ${sub.fixJ ? 'disabled' : ''}>
-                            <input type="number" class="input-box" id="f_${sub.id}" placeholder="$" value="${sub.fixF || ''}" ${sub.fixF ? 'disabled' : ''}>
-                            <button class="add-btn" onclick="addToCase('${sub.id}', '${cat.id}')">+</button>
+                            <input type="number" class="input-box" id="j_${sub.id}" placeholder="J" value="${sub.fixJ || ''}" ${sub.fixJ !== null ? 'disabled' : ''}>
+                            <input type="number" class="input-box" id="f_${sub.id}" placeholder="$" value="${sub.fixF || ''}" ${sub.fixF !== null ? 'disabled' : ''}>
+                            <button class="add-btn" onclick="add('${sub.id}', '${cat.id}')">+</button>
                         </div>
                     </div>`).join('')}
             </div>
@@ -62,30 +61,41 @@ function render() {
     }).join('');
 }
 
-function addToCase(subId, catId) {
+function add(subId, catId) {
     const cat = lawsData.find(c => c.id === catId);
     const sub = cat.subs.find(s => s.id === subId);
     const inJ = document.getElementById(`j_${subId}`);
     const inF = document.getElementById(`f_${subId}`);
 
-    let valJ = sub.fixJ ? parseInt(sub.fixJ) : (parseInt(inJ.value) || 0);
-    let valF = sub.fixF ? parseInt(sub.fixF) : (parseInt(inF.value) || 0);
+    let valJ = sub.fixJ !== null ? parseInt(sub.fixJ) : (parseInt(inJ.value) || 0);
+    let valF = sub.fixF !== null ? parseInt(sub.fixF) : (parseInt(inF.value) || 0);
 
-    // Validace limitů
-    if (!sub.fixJ && (valJ < sub.minJ || valJ > sub.maxJ)) {
-        return showAlert(`LIMIT PORUŠEN! Sazba je ${sub.minJ} - ${sub.maxJ} let.`);
+    // DŮLEŽITÁ OPRAVA: Validace a vyhození varování
+    if (sub.fixJ === null) { // Pouze pokud není trest fixní
+        if (valJ > 0 && valJ < sub.minJ) {
+            showAlert(`PODMINIMÁLNÍ TREST! Sazba vyžaduje alespoň ${sub.minJ} let.`);
+            return;
+        }
+        if (valJ > sub.maxJ) {
+            showAlert(`NADMAXIMÁLNÍ TREST! Sazba dovoluje maximálně ${sub.maxJ} let.`);
+            return;
+        }
     }
 
-    activeCase.push({ title: cat.title, jail: valJ, fine: valF });
-    updateSidebar();
+    if (valJ > 0 || valF > 0) {
+        activeCase.push({ title: cat.title, text: sub.text, jail: valJ, fine: valF });
+        updateSidebar();
+        if (sub.fixJ === null) inJ.value = '';
+        if (sub.fixF === null) inF.value = '';
+    }
 }
 
 function updateSidebar() {
     const list = document.getElementById('caseEntries');
     list.innerHTML = activeCase.map((item, idx) => `
         <div class="protocol-card">
-            <div style="font-size:11px; color:var(--accent); font-weight:bold;">${item.title}</div>
-            <div style="font-size:15px; font-weight:bold;">${item.jail} J | $${item.fine.toLocaleString()}</div>
+            <div style="font-size:11px; color:var(--accent); font-weight:bold; margin-bottom:5px;">${item.title}</div>
+            <div style="font-size:14px; font-weight:bold;">${item.jail} J | $${item.fine.toLocaleString()}</div>
             <span style="position:absolute; right:10px; top:10px; cursor:pointer; opacity:0.5;" onclick="activeCase.splice(${idx},1);updateSidebar()">✕</span>
         </div>`).join('');
     
@@ -94,6 +104,10 @@ function updateSidebar() {
     list.scrollTop = list.scrollHeight;
 }
 
-function showAlert(m) { document.getElementById('alertMsg').innerText = m; document.getElementById('customAlert').style.display = 'flex'; }
+function showAlert(m) {
+    document.getElementById('alertMsg').innerText = m;
+    document.getElementById('customAlert').style.display = 'flex';
+}
+
 function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }
 function newCase() { activeCase = []; updateSidebar(); }
