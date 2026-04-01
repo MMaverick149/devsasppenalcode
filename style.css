@@ -7,11 +7,10 @@
 }
 
 body {
-    background-color: var(--bg);
+    background: var(--bg);
     color: var(--text);
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
-    overflow-x: hidden;
 }
 
 /* Login Screen */
@@ -23,119 +22,69 @@ body {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 10000;
+    z-index: 1000;
 }
+
+.terminal-title { color: var(--accent); letter-spacing: 5px; margin: 0; }
+.terminal-subtitle { color: #444; font-size: 10px; margin-bottom: 30px; }
 
 .login-btn {
     background: transparent;
     border: 1px solid var(--accent);
     color: var(--accent);
-    padding: 12px 40px;
+    padding: 10px 30px;
     cursor: pointer;
     font-weight: bold;
-    transition: 0.3s;
-}
-
-.login-btn:hover {
-    background: var(--accent);
-    color: #000;
 }
 
 /* Layout */
-.container {
-    display: none; /* Skryto do přihlášení */
-    display: flex;
-    min-height: 100vh;
-}
+.container { display: flex; }
+.main-side { flex: 1; padding: 20px; margin-right: 350px; }
 
-.main-side {
-    flex: 1;
-    padding: 20px;
-    max-width: calc(100% - 350px);
-}
-
-/* Sidebar - Sticky a Auto-scroll */
+/* Sidebar - FIXNÍ POZICE */
 .sidebar {
     width: 350px;
     background: #08090a;
     border-left: 1px solid var(--border);
     position: fixed;
-    right: 0;
-    top: 0;
-    height: 100vh;
+    right: 0; top: 0; height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-.case-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 15px;
-    scroll-behavior: smooth;
-}
+.case-list { flex: 1; overflow-y: auto; padding: 15px; }
 
-.sidebar-footer {
-    padding: 20px;
-    background: #0a0b0d;
-    border-top: 1px solid var(--border);
-}
+.sidebar-footer { padding: 20px; background: #0a0b0d; border-top: 1px solid var(--border); }
 
-/* Tlačítka a vstupy */
+/* Tlačítka a políčka */
 .add-btn {
     background: var(--accent);
     border: none;
-    width: 35px;
-    height: 35px;
+    width: 35px; height: 35px;
+    font-weight: bold; cursor: pointer;
     border-radius: 4px;
-    font-weight: 900;
-    cursor: pointer;
 }
 
 .input-box {
-    background: #111;
-    border: 1px solid #222;
-    color: #fff;
-    padding: 8px;
-    width: 60px;
-    border-radius: 4px;
-    text-align: center;
+    background: #111; border: 1px solid #222;
+    color: #fff; width: 60px; padding: 8px;
+    text-align: center; border-radius: 4px;
 }
 
 .input-box:disabled {
     background: #000 !important;
     color: var(--accent) !important;
-    border-color: #1a1a1a !important;
     cursor: not-allowed;
-    opacity: 0.8;
 }
 
-/* Protocol Card */
-.protocol-card {
-    background: #111;
-    border-left: 3px solid var(--accent);
-    padding: 12px;
-    margin-bottom: 10px;
-    position: relative;
-}
-
-.p-footer b { color: var(--accent); }
-
-/* Alert Box */
+/* Alert */
 .alert-overlay {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.85);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 11000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex; justify-content: center; align-items: center;
+    z-index: 2000;
 }
-
 .alert-box {
-    background: #111;
-    border: 1px solid #f44336;
-    padding: 30px;
-    text-align: center;
-    max-width: 400px;
-    border-radius: 8px;
+    background: #111; border: 1px solid var(--accent);
+    padding: 30px; text-align: center; border-radius: 8px;
 }

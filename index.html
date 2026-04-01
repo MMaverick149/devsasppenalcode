@@ -8,13 +8,12 @@
 </head>
 <body>
     <div id="loginScreen">
-        <h1 style="color:var(--accent); letter-spacing: 5px; margin: 0;">SASP TERMINÁL</h1>
-        <p style="color:#444; font-size: 10px; margin-bottom: 40px; letter-spacing: 2px;">SECURE ACCESS GATEWAY</p>
+        <h1 class="terminal-title">SASP TERMINÁL</h1>
+        <p class="terminal-subtitle">SECURE ACCESS GATEWAY</p>
         <button class="login-btn" onclick="enterEvidence()">VSTOUPIT DO EVIDENCE</button>
-        <p style="position: absolute; bottom: 20px; color: #222; font-size: 11px;">© 2026 SASP Nathaniel Hartman</p>
     </div>
 
-    <div id="mainContent" class="container">
+    <div id="mainContent" class="container" style="display: none;">
         <div class="main-side">
             <div class="search-wrapper">
                 <input type="text" id="searchInput" class="search-bar" placeholder="Hledat v zákoníku (např. §7)..." oninput="render()">
@@ -23,19 +22,11 @@
         </div>
         
         <div class="sidebar">
-            <div class="sidebar-header">
-                <h3>AKTUÁLNÍ PŘÍPAD</h3>
-            </div>
-            
-            <div id="caseEntries" class="case-list">
-                </div>
-            
+            <div class="sidebar-header">AKTUÁLNÍ PŘÍPAD</div>
+            <div id="caseEntries" class="case-list"></div>
             <div class="sidebar-footer">
                 <div class="summary">
-                    <div class="sum-row">
-                        <span>CELKEM:</span>
-                        <span class="sum-val"><span id="sumJail">0</span> J | $<span id="sumFine">0</span></span>
-                    </div>
+                    CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span>
                 </div>
                 <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
             </div>
@@ -44,10 +35,9 @@
 
     <div id="customAlert" class="alert-overlay" style="display: none;">
         <div class="alert-box">
-            <div class="alert-icon">🚫</div>
             <h2 id="alertTitle">VAROVÁNÍ</h2>
             <p id="alertMsg"></p>
-            <button onclick="closeAlert()">ROZUMÍM</button>
+            <button class="alert-btn" onclick="closeAlert()">OK</button>
         </div>
     </div>
 
