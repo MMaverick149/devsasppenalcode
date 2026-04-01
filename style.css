@@ -49,3 +49,18 @@ b, strong, .highlight { color: var(--accent) !important; font-weight: bold; }
 .alert-box { background: #000; border: 2px solid var(--red); border-radius: 20px; width: 500px; padding: 40px; text-align: center; }
 .btn-red { background: var(--red); color: #fff; border: none; padding: 12px 45px; font-weight: 900; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
 .btn-black { background: #111; color: #fff; border: 1px solid #333; padding: 12px 45px; font-weight: 900; border-radius: 8px; cursor: pointer; text-transform: uppercase; }
+
+/* ... předchozí styly zůstávají ... */
+
+.input-box:disabled {
+    background: #1a1c22 !important;
+    color: #555 !important;
+    cursor: not-allowed;
+    border-color: #222 !important;
+}
+
+/* Zvýraznění tučného žlutého textu v protokolu */
+.protocol-card b, .protocol-card strong {
+    color: var(--accent) !important;
+    font-weight: 900;
+}

@@ -1,7 +1,6 @@
 let laws = [];
 let protocol = [];
 
-// Okamžité načtení
 window.onload = () => load();
 
 async function load() {
@@ -13,13 +12,19 @@ async function load() {
         const title = item.getAttribute('data-title');
         const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => {
             const raw = line.innerText.toLowerCase();
-            // Oprava regexu pro lepší detekci limitů
             const match = raw.match(/sazba\s+(\d+)-(\d+)/i) || raw.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+)/i) || raw.match(/(\d+)\s*(?:rok|let|roku)\s+na\s+(\d+)/i);
+            
+            // Načtení fixních hodnot z HTML
+            const fixJ = parseInt(line.getAttribute('data-fix-jail')) || 0;
+            const fixF = parseInt(line.getAttribute('data-fix-fine')) || 0;
+
             return { 
                 text: line.innerText, 
                 html: line.innerHTML, 
                 minJ: match ? parseInt(match[1]) : 0, 
                 maxJ: match ? parseInt(match[2]) : 999,
+                fixJ: fixJ,
+                fixF: fixF,
                 isZP: line.innerText.toUpperCase().includes("ZBROJNÍ")
             };
         });
@@ -36,14 +41,19 @@ function render() {
         <div class="law-item">
             <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title} <span>▼</span></div>
             <div class="law-content">
-                ${law.subs.map((sub, sIdx) => `
+                ${law.subs.map((sub, sIdx) => {
+                    // Pokud je fixní trest, předvyplníme a zamkneme políčko
+                    const jAttr = sub.fixJ > 0 ? `value="${sub.fixJ}" disabled` : `placeholder="J"`;
+                    const fAttr = sub.fixF > 0 ? `value="${sub.fixF}" disabled` : `placeholder="$"`;
+                    
+                    return `
                     <div class="row" style="display:flex; align-items:center; gap:12px; padding:12px 0; border-bottom:1px solid #1c1f24;">
                         <div style="flex:1;">${sub.html}</div>
-                        <input type="number" class="input-box" id="j_${law.id}_${sIdx}" placeholder="J" style="background:#000; border:1px solid #333; color:var(--accent); width:50px; padding:8px; text-align:center; border-radius:4px;">
-                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" placeholder="$" style="background:#000; border:1px solid #333; color:var(--accent); width:70px; padding:8px; text-align:center; border-radius:4px;">
+                        <input type="number" min="0" class="input-box" id="j_${law.id}_${sIdx}" ${jAttr}>
+                        <input type="number" min="0" class="input-box" id="f_${law.id}_${sIdx}" ${fAttr}>
                         <button onclick="add('${law.id}', ${sIdx})" style="background:var(--accent); border:none; width:40px; height:35px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
-                    </div>
-                `).join('')}
+                    </div>`;
+                }).join('')}
             </div>
         </div>`).join('');
 }
@@ -51,17 +61,29 @@ function render() {
 function add(lawId, sIdx) {
     const law = laws.find(l => l.id === lawId);
     const sub = law.subs[sIdx];
-    const jVal = parseInt(document.getElementById(`j_${lawId}_${sIdx}`).value) || 0;
-    const fVal = parseInt(document.getElementById(`f_${lawId}_${sIdx}`).value) || 0;
+    
+    // Priorita: Fixní hodnota > Ruční hodnota
+    let jVal = sub.fixJ > 0 ? sub.fixJ : parseInt(document.getElementById(`j_${lawId}_${sIdx}`).value) || 0;
+    let fVal = sub.fixF > 0 ? sub.fixF : parseInt(document.getElementById(`f_${lawId}_${sIdx}`).value) || 0;
 
-    // FIX LOGIKY LIMITU: Kontrolujeme jen pokud je zadaná hodnota a pokud zákon má definované maxJ
-    if (jVal > sub.maxJ && sub.maxJ !== 999) {
-        document.getElementById('alertMsg').innerText = `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se Státním Zástupcem!`;
-        document.getElementById('customAlert').style.display = 'flex';
+    // 1. ZÁKAZ ZÁPORNÝCH HODNOT
+    if (jVal < 0 || fVal < 0) {
+        showCustomAlert("Chyba hodnoty", "Tresty nemohou být v záporných číslech.");
         return;
     }
 
-    // Přidání do protokolu (i když je jedno z polí nula)
+    // 2. KONTROLA MINIMÁLNÍ HRANICE (pokud není fixní)
+    if (sub.fixJ === 0 && jVal > 0 && jVal < sub.minJ) {
+        showCustomAlert("PODMINIMÁLNÍ TREST", `Minimální sazba pro tento čin je ${sub.minJ} let.`);
+        return;
+    }
+
+    // 3. KONTROLA MAXIMÁLNÍ HRANICE
+    if (sub.fixJ === 0 && jVal > sub.maxJ && sub.maxJ !== 999) {
+        showCustomAlert("NADMAXIMÁLNÍ TREST", `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se Státním Zástupcem!`);
+        return;
+    }
+
     if (jVal > 0 || fVal > 0) {
         protocol.push({ 
             title: law.title, 
@@ -71,27 +93,30 @@ function add(lawId, sIdx) {
             isZP: sub.isZP 
         });
         update();
-        // Vymazání políček po přidání
-        document.getElementById(`j_${lawId}_${sIdx}`).value = '';
-        document.getElementById(`f_${lawId}_${sIdx}`).value = '';
+        if (sub.fixJ === 0) document.getElementById(`j_${lawId}_${sIdx}`).value = '';
+        if (sub.fixF === 0) document.getElementById(`f_${lawId}_${sIdx}`).value = '';
     }
+}
+
+function showCustomAlert(title, msg) {
+    const alertBox = document.getElementById('customAlert');
+    alertBox.querySelector('h2').innerText = title;
+    document.getElementById('alertMsg').innerText = msg;
+    alertBox.style.display = 'flex';
 }
 
 function update() {
     const list = document.getElementById('caseEntries');
     list.innerHTML = protocol.map((p, idx) => `
         <div class="protocol-card">
-            <span class="p-header">${p.title} ${p.isZP ? '<span style="background:var(--red); color:#fff; font-size:10px; padding:2px 6px; border-radius:3px; margin-left:10px; vertical-align:middle;">Zbrojní Průkaz</span>' : ''}</span>
+            <span class="p-header">${p.title} ${p.isZP ? '<span style="background:var(--red); color:#fff; font-size:10px; padding:2px 6px; border-radius:3px; margin-left:10px;">Zbrojní Průkaz</span>' : ''}</span>
             <span class="p-text">${p.subText}</span>
             <div class="p-footer"><b>${p.jail} LET | $${p.fine.toLocaleString()}</b></div>
             <div onclick="removeEntry(${idx})" style="position:absolute; top:10px; right:10px; cursor:pointer; color:#444;">✕</div>
         </div>`).join('');
     
-    const totalJ = protocol.reduce((a, b) => a + b.jail, 0);
-    const totalF = protocol.reduce((a, b) => a + b.fine, 0);
-    
-    document.getElementById('sumJail').innerText = totalJ;
-    document.getElementById('sumFine').innerText = totalF.toLocaleString();
+    document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
+    document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
 }
 
 function removeEntry(idx) { protocol.splice(idx, 1); update(); }
