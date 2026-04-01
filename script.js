@@ -1,34 +1,37 @@
-let laws = [];
-let protocol = [];
+let lawsData = [];
+let activeCase = [];
 
-window.onload = load;
-
-async function load() {
-    const res = await fetch('tresty.html?v=' + Date.now());
-    const html = await res.text();
-    const doc = new DOMParser().parseFromString(html, 'text/html');
-    
-    // Automatické načtení sekcí (§7, §8 atd.)
-    laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
-        return {
-            id: "law_" + idx,
-            title: item.getAttribute('data-title') || "Neznámá sekce",
-            subs: Array.from(item.querySelectorAll('.sub-line')).map(line => {
-                const raw = line.innerText.toLowerCase();
-                const match = raw.match(/sazba\s+(\d+)-(\d+)/i) || raw.match(/od\s+(\d+)\s+let/i);
+// Načtení dat při startu
+window.onload = async () => {
+    try {
+        const response = await fetch('tresty.html?v=' + Date.now());
+        const html = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        
+        const categories = doc.querySelectorAll('.law-item');
+        lawsData = Array.from(categories).map((cat, cIdx) => ({
+            id: cIdx,
+            title: cat.getAttribute('data-title') || "Neznámá kategorie",
+            items: Array.from(cat.querySelectorAll('.sub-line')).map((line, iIdx) => {
+                const text = line.innerText;
+                const match = text.match(/sazba\s+(\d+)-(\d+)/i) || text.match(/od\s+(\d+)\s+let/i);
                 return {
-                    text: line.innerText,
-                    html: line.innerHTML,
+                    id: `${cIdx}_${iIdx}`,
+                    fullHtml: line.innerHTML,
+                    pureText: text,
                     minJ: match ? parseInt(match[1]) : 0,
-                    maxJ: raw.includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
-                    fixJ: line.getAttribute('data-fix-jail') ? parseInt(line.getAttribute('data-fix-jail')) : null,
-                    fixF: line.getAttribute('data-fix-fine') ? parseInt(line.getAttribute('data-fix-fine')) : null
+                    maxJ: text.toLowerCase().includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
+                    fixJ: line.getAttribute('data-fix-jail'),
+                    fixF: line.getAttribute('data-fix-fine')
                 };
             })
-        };
-    });
-    render();
-}
+        }));
+        render();
+    } catch (e) {
+        console.error("Chyba při načítání zákoníku:", e);
+    }
+};
 
 function enterEvidence() {
     document.getElementById('loginScreen').style.display = 'none';
@@ -39,57 +42,88 @@ function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
     const container = document.getElementById('lawsContainer');
     
-    container.innerHTML = laws.map(law => {
-        const hasMatch = law.title.toLowerCase().includes(query) || law.subs.some(s => s.text.toLowerCase().includes(query));
-        if (!hasMatch && query !== "") return "";
+    container.innerHTML = lawsData.map(cat => {
+        const filteredItems = cat.items.filter(i => i.pureText.toLowerCase().includes(query) || cat.title.toLowerCase().includes(query));
+        if (filteredItems.length === 0 && query !== "") return "";
 
         return `
-        <div class="law-item ${query !== "" ? 'active' : ''}">
-            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title}</div>
-            <div class="law-content">
-                ${law.subs.map((sub, sIdx) => `
-                    <div class="row">
-                        <div style="flex:1;">${sub.html}</div>
-                        <input type="number" class="input-box" id="j_${law.id}_${sIdx}" placeholder="J" value="${sub.fixJ || ''}" ${sub.fixJ ? 'disabled' : ''}>
-                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" placeholder="$" value="${sub.fixF || ''}" ${sub.fixF ? 'disabled' : ''}>
-                        <button class="add-btn" onclick="add('${law.id}', ${sIdx})">+</button>
-                    </div>`).join('')}
+            <div class="law-category ${query !== "" ? 'active' : ''}">
+                <div class="category-header" onclick="this.parentElement.classList.toggle('active')">
+                    ${cat.title}
+                </div>
+                <div class="category-content">
+                    ${filteredItems.map(item => `
+                        <div class="punishment-row">
+                            <div class="law-text">${item.fullHtml}</div>
+                            <div class="input-group">
+                                <input type="number" class="val-input" id="j_${item.id}" placeholder="J" value="${item.fixJ || ''}" ${item.fixJ ? 'disabled' : ''}>
+                                <input type="number" class="val-input" id="f_${item.id}" placeholder="$" value="${item.fixF || ''}" ${item.fixF ? 'disabled' : ''}>
+                                <button class="add-btn" onclick="addToCase('${cat.id}', '${item.id}')">+</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
             </div>
-        </div>`;
+        `;
     }).join('');
 }
 
-function add(lawId, sIdx) {
-    const law = laws.find(l => l.id === lawId);
-    const sub = law.subs[sIdx];
-    const jIn = document.getElementById(`j_${lawId}_${sIdx}`);
-    const fIn = document.getElementById(`f_${lawId}_${sIdx}`);
+function addToCase(catId, itemId) {
+    const cat = lawsData.find(c => c.id == catId);
+    const item = cat.items.find(i => i.id == itemId);
+    
+    const jailVal = item.fixJ ? parseInt(item.fixJ) : (parseInt(document.getElementById(`j_${itemId}`).value) || 0);
+    const fineVal = item.fixF ? parseInt(item.fixF) : (parseInt(document.getElementById(`f_${itemId}`).value) || 0);
 
-    let vJ = sub.fixJ || parseInt(jIn.value) || 0;
-    let vF = sub.fixF || parseInt(fIn.value) || 0;
-
-    if (!sub.fixJ && (vJ < sub.minJ || vJ > sub.maxJ)) {
-        return showAlert(`TREST MIMO SAZBU! (${sub.minJ} - ${sub.maxJ} let)`);
+    // Kontrola sazeb
+    if (!item.fixJ && (jailVal < item.minJ || jailVal > item.maxJ)) {
+        showCustomAlert(`Sazba je ${item.minJ}-${item.maxJ} let. Více nelze udělit ani se Státním Zástupcem!`);
+        return;
     }
 
-    protocol.push({ title: law.title, jail: vJ, fine: vF });
+    activeCase.push({
+        catTitle: cat.title,
+        desc: item.pureText.split(')')[1] || item.pureText,
+        jail: jailVal,
+        fine: fineVal
+    });
+
     updateSidebar();
 }
 
 function updateSidebar() {
     const list = document.getElementById('caseEntries');
-    list.innerHTML = protocol.map((p, i) => `
-        <div class="protocol-card">
-            <small>${p.title}</small>
-            <div><b>${p.jail} J | $${p.fine.toLocaleString()}</b></div>
-            <span style="position:absolute; right:10px; top:10px; cursor:pointer;" onclick="protocol.splice(${i},1);updateSidebar()">✕</span>
-        </div>`).join('');
-    
-    document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
-    document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
-    list.scrollTop = list.scrollHeight;
+    list.innerHTML = activeCase.map((entry, idx) => `
+        <div class="protocol-item">
+            <span class="remove-item" onclick="removeItem(${idx})">✕</span>
+            <span class="title">${entry.catTitle}</span>
+            <span class="desc">${entry.desc.substring(0, 60)}...</span>
+            <div class="values">${entry.jail} J | $${entry.fine.toLocaleString()}</div>
+        </div>
+    `).join('');
+
+    const totalJ = activeCase.reduce((sum, e) => sum + e.jail, 0);
+    const totalF = activeCase.reduce((sum, e) => sum + e.fine, 0);
+
+    document.getElementById('sumJail').innerText = totalJ;
+    document.getElementById('sumFine').innerText = totalF.toLocaleString();
 }
 
-function showAlert(m) { document.getElementById('alertMsg').innerText = m; document.getElementById('customAlert').style.display = 'flex'; }
-function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }
-function newCase() { protocol = []; updateSidebar(); }
+function removeItem(idx) {
+    activeCase.splice(idx, 1);
+    updateSidebar();
+}
+
+function newCase() {
+    activeCase = [];
+    updateSidebar();
+}
+
+function showCustomAlert(msg) {
+    document.getElementById('alertMsg').innerText = msg;
+    document.getElementById('customAlert').style.display = 'flex';
+}
+
+function closeAlert() {
+    document.getElementById('customAlert').style.display = 'none';
+}

@@ -2,31 +2,38 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SASP TERMINÁL</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div id="loginScreen">
         <h1 class="terminal-title">SASP TERMINÁL</h1>
+        <p class="subtitle">SECURE ACCESS GATEWAY</p>
         <button class="login-btn" onclick="enterEvidence()">VSTOUPIT DO EVIDENCE</button>
+        <p class="copyright">© 2026 SASP Nathaniel Hartman</p>
     </div>
 
     <div id="mainContent" class="app-container" style="display: none;">
         <nav class="top-nav">
-            <input type="text" id="searchInput" placeholder="Hledat v zákoníku..." oninput="render()">
+            <input type="text" id="searchInput" placeholder="Hledat v zákoníku (např. §7)..." oninput="render()">
         </nav>
 
         <div class="content-wrapper">
             <main class="laws-section">
-                <div id="lawsContainer"></div>
+                <div id="lawsContainer">
+                    </div>
             </main>
 
             <aside class="sidebar">
                 <div class="sidebar-header">AKTUÁLNÍ PŘÍPAD</div>
-                <div id="caseEntries" class="case-list"></div>
+                <div id="caseEntries" class="case-list">
+                    </div>
                 <div class="sidebar-footer">
-                    <div class="summary">CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span></div>
-                    <button class="action-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
+                    <div class="total-line">
+                        CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span>
+                    </div>
+                    <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
                 </div>
             </aside>
         </div>
@@ -34,9 +41,15 @@
 
     <div id="customAlert" class="alert-overlay" style="display: none;">
         <div class="alert-box">
-            <div class="alert-header">VAROVÁNÍ</div>
-            <p id="alertMsg"></p>
-            <button onclick="closeAlert()">OK</button>
+            <div class="alert-header">KONTROLA ZÁKONNOSTI</div>
+            <div class="alert-content">
+                <div class="warning-icon">🚫</div>
+                <h2 id="alertTitle">NADMAXIMÁLNÍ TREST</h2>
+                <p id="alertMsg"></p>
+                <div class="alert-btns">
+                    <button class="btn-confirm" onclick="closeAlert()">OK</button>
+                </div>
+            </div>
         </div>
     </div>
 
