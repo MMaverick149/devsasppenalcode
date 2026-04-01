@@ -1,5 +1,6 @@
 let lawsData = [];
 let activeCase = [];
+let isAdmin = false; // Pro budoucí editor
 
 window.onload = load;
 
@@ -28,7 +29,26 @@ async function load() {
             })
         }));
         render();
-    } catch (e) { console.error("Chyba při načítání:", e); }
+    } catch (e) { console.error("Chyba:", e); }
+}
+
+// NOVÁ FUNKCE: Sjetí k trestu a zvýraznění
+function scrollToLaw(subId, catId) {
+    const categoryEl = document.getElementById(catId);
+    if (!categoryEl) return;
+
+    // 1. Otevřít kategorii, pokud je zavřená
+    categoryEl.classList.add('active');
+
+    // 2. Najít konkrétní řádek trestu
+    const rowEl = document.getElementById('row_' + subId);
+    if (rowEl) {
+        rowEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // 3. Efekt zvýraznění (bliknutí)
+        rowEl.style.background = "#ffcc0033";
+        setTimeout(() => { rowEl.style.background = "transparent"; }, 2000);
+    }
 }
 
 function render() {
@@ -40,13 +60,13 @@ function render() {
         if (!hasMatch && query !== "") return "";
 
         return `
-        <div class="law-category ${query !== "" ? 'active' : ''}">
+        <div class="law-category ${query !== "" ? 'active' : ''}" id="${cat.id}">
             <div class="category-header" onclick="this.parentElement.classList.toggle('active')">
                 ${cat.title}
             </div>
             <div class="category-content">
                 ${cat.subs.map(sub => `
-                    <div class="punishment-row">
+                    <div class="punishment-row" id="row_${sub.id}">
                         <div style="flex:1; font-size:13px;">${sub.fullHtml}</div>
                         <div style="display:flex; gap:5px;">
                             <input type="number" class="input-box" id="j_${sub.id}" placeholder="J" value="${sub.fixJ || ''}" ${sub.fixJ ? 'disabled' : ''}>
@@ -73,25 +93,12 @@ function addToCase(subId, catId) {
         return;
     }
 
-    // --- SYSTÉMOVÁ UPOZORNĚNÍ ---
-    let alertMsg = "";
-
-    // 1. Kontrola Zbrojního průkazu
-    if (sub.hasZbrojak) {
-        alertMsg += "⚠️ ODEBRAT ZBROJNÍ PRŮKAZ!\nTento trest vyžaduje zabavení licence.\n\n";
-    }
-
-    // 2. Kontrola Státního zástupce (25+ let)
-    if (valJ >= 25) {
-        alertMsg += "⚖️ KONTAKTOVAT STÁTNÍHO ZÁSTUPCE!\nTrest 25+ let (Doživotí) musí být schválen.";
-    }
-
-    // Pokud máme nějaké varování, zobrazíme ho
-    if (alertMsg !== "") {
-        showAlert(alertMsg);
-    }
+    if (sub.hasZbrojak) showAlert("⚠️ ODEBRAT ZBROJNÍ PRŮKAZ!");
+    if (valJ >= 25) showAlert("⚖️ KONTAKTOVAT STÁTNÍHO ZÁSTUPCE!");
 
     activeCase.push({ 
+        subId: subId, 
+        catId: catId,
         title: cat.title, 
         desc: sub.plainText, 
         zbrojak: sub.hasZbrojak,
@@ -100,15 +107,13 @@ function addToCase(subId, catId) {
     });
     
     updateSidebar();
-    if (!sub.fixJ) jInput.value = '';
-    if (!sub.fixF) fInput.value = '';
 }
 
 function updateSidebar() {
     const list = document.getElementById('caseEntries');
     list.innerHTML = activeCase.map((item, idx) => `
-        <div class="protocol-card">
-            <span class="card-close" onclick="activeCase.splice(${idx},1);updateSidebar()">×</span>
+        <div class="protocol-card" onclick="scrollToLaw('${item.subId}', '${item.catId}')" style="cursor:pointer">
+            <span class="card-close" onclick="event.stopPropagation(); activeCase.splice(${idx},1); updateSidebar()">×</span>
             <div class="card-top">
                 <span class="card-title">${item.title}</span>
                 ${item.zbrojak ? '<span class="tag-zbrojak">Zbrojní Průkaz</span>' : ''}
@@ -121,11 +126,20 @@ function updateSidebar() {
     document.getElementById('sumFine').innerText = activeCase.reduce((s, i) => s + i.fine, 0).toLocaleString();
 }
 
-function showAlert(m) {
-    document.getElementById('alertMsg').innerText = m;
-    document.getElementById('customAlert').style.display = 'flex';
-}
-
+// Pomocné funkce
+function showAlert(m) { document.getElementById('alertMsg').innerText = m; document.getElementById('customAlert').style.display = 'flex'; }
 function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }
 function enterEvidence() { document.getElementById('loginScreen').style.display = 'none'; document.getElementById('mainContent').style.display = 'flex'; }
 function newCase() { activeCase = []; updateSidebar(); }
+
+// ADMIN EDITOR - Aktivuje se tajnou klávesou 'E'
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'e' && e.ctrlKey) {
+        const pass = prompt("Zadej administrátorské heslo pro úpravu trestů:");
+        if (pass === "sasp123") { // Tady si dej své heslo
+            isAdmin = true;
+            document.body.classList.add('admin-mode');
+            alert("Editor aktivován. Nyní můžeš upravovat texty přímo v zákoníku (zatím jen vizuálně).");
+        }
+    }
+});
