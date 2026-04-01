@@ -25,8 +25,12 @@
                 <div class="sidebar-header">AKTUÁLNÍ PŘÍPAD</div>
                 <div id="caseEntries" class="case-list"></div>
                 <div class="sidebar-footer">
-                    <div class="summary">
-                        CELKEM: <span id="sumJail">0</span> J | $<span id="sumFine">0</span>
+                    <div class="summary-line">
+                        <span class="label-celkem">CELKEM:</span>
+                        <div class="values-celkem">
+                            <span id="sumJail">0</span> <span class="unit-j">J</span> | 
+                            <span id="sumFine">0</span> <span class="unit-f">$</span>
+                        </div>
                     </div>
                     <button class="new-case-btn" onclick="newCase()">NOVÝ PŘÍPAD</button>
                 </div>

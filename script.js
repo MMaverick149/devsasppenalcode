@@ -17,7 +17,8 @@ async function load() {
             return {
                 id: `item_${cIdx}_${sIdx}`,
                 html: line.innerHTML,
-                text: raw, // Tady je celý text řádku včetně písmene a) b) c)
+                text: raw,
+                hasZbrojak: raw.toLowerCase().includes("zbrojní průkaz"), // Detekce zbrojáku
                 minJ: match ? parseInt(match[1]) : 0,
                 maxJ: raw.toLowerCase().includes("doživotí") ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
                 fixJ: line.getAttribute('data-fix-jail'),
@@ -71,30 +72,18 @@ function addToCase(subId, catId) {
     }
 
     if (valJ >= 25) {
-        showAlert("POZOR: Trest 25 let a více vyžaduje konzultaci se STÁTNÍM ZÁSTUPCEM!");
+        showAlert("POZOR: Trest 25 let a více (Doživotí) vyžaduje konzultaci se STÁTNÍM ZÁSTUPCEM!");
     }
 
-    if (!sub.fixJ && valJ > 0 && valJ < 25) {
-        if (valJ < sub.minJ) {
-            showAlert(`CHYBA: Minimální sazba je ${sub.minJ} let.`);
-            return;
-        }
-        if (valJ > sub.maxJ) {
-            showAlert(`CHYBA: Maximální sazba je ${sub.maxJ} let.`);
-            return;
-        }
-    }
-
-    // TADY JE OPRAVA: Ukládáme i 'subText', což je ten řádek začínající písmenem
     activeCase.push({ 
         title: cat.title, 
-        subText: sub.text, // Přenese text "c) úmyslně a zbraní..."
+        subText: sub.text, 
+        zbrojak: sub.hasZbrojak,
         jail: valJ, 
         fine: valF 
     });
     
     updateSidebar();
-
     if (!sub.fixJ) jInput.value = '';
     if (!sub.fixF) fInput.value = '';
 }
@@ -103,10 +92,13 @@ function updateSidebar() {
     const list = document.getElementById('caseEntries');
     list.innerHTML = activeCase.map((item, idx) => `
         <div class="protocol-card">
-            <b>${item.title}</b>
-            <div class="protocol-subtext">${item.subText}</div>
-            <div class="protocol-values">${item.jail} J | $${item.fine.toLocaleString()}</div>
-            <span style="position:absolute; right:10px; top:10px; cursor:pointer; opacity:0.5;" onclick="activeCase.splice(${idx},1);updateSidebar()">✕</span>
+            <span class="card-close" onclick="activeCase.splice(${idx},1);updateSidebar()">×</span>
+            <div class="card-top">
+                <span class="card-title">${item.title}</span>
+                ${item.zbrojak ? '<span class="tag-zbrojak">Zbrojní Průkaz</span>' : ''}
+            </div>
+            <div class="card-desc">${item.subText}</div>
+            <div class="card-footer">${item.jail} LET | $${item.fine.toLocaleString()}</div>
         </div>`).join('');
     
     document.getElementById('sumJail').innerText = activeCase.reduce((s, i) => s + i.jail, 0);
