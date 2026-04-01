@@ -64,3 +64,17 @@ b, strong, .highlight { color: var(--accent) !important; font-weight: bold; }
     color: var(--accent) !important;
     font-weight: 900;
 }
+
+/* ... předchozí styly ... */
+
+.input-box:disabled {
+    background: #000 !important;
+    color: #444 !important; /* Šedý text pro fixní hodnoty */
+    border: 1px solid #1a1a1a !important;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.input-box:focus {
+    border-color: var(--accent);
+}

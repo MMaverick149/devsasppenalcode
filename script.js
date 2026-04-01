@@ -122,3 +122,80 @@ function update() {
 function removeEntry(idx) { protocol.splice(idx, 1); update(); }
 function newCase() { protocol = []; update(); }
 function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }
+
+// ... (začátek load a render zůstává stejný, změna je v add a regexu)
+
+async function load() {
+    const res = await fetch('tresty.html?v=' + Date.now());
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    
+    laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
+        const title = item.getAttribute('data-title');
+        const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => {
+            const raw = line.innerText.toLowerCase();
+            
+            // Rozšířený regex pro zachycení "od X let" i "doživotí" (považováno za 999)
+            const match = raw.match(/sazba\s+(\d+)-(\d+)/i) || 
+                          raw.match(/od\s+(\d+)\s+let\s+po\s+doživotí/i) ||
+                          raw.match(/od\s+(\d+)\s+let\s+do\s+(\d+)/i) ||
+                          raw.match(/(\d+)\s+rok[ua]\s+na\s+(\d+)/i);
+            
+            const fixJ = line.getAttribute('data-fix-jail');
+            const fixF = line.getAttribute('data-fix-fine');
+
+            return { 
+                text: line.innerText, 
+                html: line.innerHTML, 
+                minJ: match ? parseInt(match[1]) : 0, 
+                maxJ: (raw.includes("doživotí")) ? 999 : (match && match[2] ? parseInt(match[2]) : 999),
+                fixJ: fixJ !== null && fixJ !== "" ? parseInt(fixJ) : null,
+                fixF: fixF !== null && fixF !== "" ? parseInt(fixF) : null,
+                isZP: line.innerText.toUpperCase().includes("ZBROJNÍ")
+            };
+        });
+        return { id: "law_"+idx, title, subs };
+    });
+    render();
+}
+
+function add(lawId, sIdx) {
+    const law = laws.find(l => l.id === lawId);
+    const sub = law.subs[sIdx];
+    
+    const inputJ = document.getElementById(`j_${lawId}_${sIdx}`);
+    const inputF = document.getElementById(`f_${lawId}_${sIdx}`);
+
+    // STRIKTNÍ PRIORITA: Pokud je v HTML definováno data-fix, ignoruj vstup a použij fix
+    let jVal = sub.fixJ !== null ? sub.fixJ : (parseInt(inputJ.value) || 0);
+    let fVal = sub.fixF !== null ? sub.fixF : (parseInt(inputF.value) || 0);
+
+    // OCHRANA PROTI FIXNÍM NULÁM: Pokud paragraf zakazuje pokutu (data-fix-fine="0")
+    if (sub.fixF === 0 && (parseInt(inputF.value) || 0) > 0) {
+        showCustomAlert("ZÁKAZ POKUTY", "Tento paragraf neumožňuje udělení peněžitého trestu.");
+        return;
+    }
+    if (sub.fixJ === 0 && (parseInt(inputJ.value) || 0) > 0) {
+        showCustomAlert("ZÁKAZ VĚZENÍ", "Tento čin je pouze za pokutu.");
+        return;
+    }
+
+    // VALIDACE LIMITŮ (pouze pokud není fixní)
+    if (sub.fixJ === null) {
+        if (jVal > 0 && jVal < sub.minJ) {
+            showCustomAlert("PODMINIMÁLNÍ TREST", `Minimální sazba je ${sub.minJ} let.`);
+            return;
+        }
+        if (jVal > sub.maxJ) {
+            showCustomAlert("NADMAXIMÁLNÍ TREST", `Sazba je max ${sub.maxJ} let.`);
+            return;
+        }
+    }
+
+    if (jVal > 0 || fVal > 0) {
+        protocol.push({ title: law.title, subText: sub.text, jail: jVal, fine: fVal, isZP: sub.isZP });
+        update();
+        if (sub.fixJ === null) inputJ.value = '';
+        if (sub.fixF === null) inputF.value = '';
+    }
+}
