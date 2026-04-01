@@ -11,63 +11,50 @@
 
 body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; margin: 0; overflow: hidden; }
 
-/* Login */
 #loginScreen { position: fixed; inset: 0; background: #000; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 9999; }
 .terminal-title { color: var(--accent); letter-spacing: 5px; font-weight: 900; }
 .login-btn { background: transparent; border: 1px solid var(--accent); color: var(--accent); padding: 10px 30px; cursor: pointer; font-weight: bold; }
 
-/* Layout */
 .app-container { height: 100vh; display: flex; flex-direction: column; }
 .top-nav { height: 60px; background: #08090a; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--border); }
 #searchInput { background: #111; border: 1px solid #333; color: #fff; padding: 10px; width: 350px; border-radius: 4px; }
 .content-wrapper { display: flex; flex: 1; overflow: hidden; }
 .laws-section { flex: 1; overflow-y: auto; padding: 20px; }
 
-/* Zákoník */
 .law-category { background: var(--card); border: 1px solid var(--border); margin-bottom: 10px; border-radius: 4px; }
 .category-header { background: #121417; color: var(--accent); padding: 15px; font-weight: 900; cursor: pointer; text-transform: uppercase; }
 .category-content { display: none; padding: 10px; border-top: 1px solid var(--border); }
 .law-category.active .category-content { display: block; }
+
 .punishment-row { display: flex; align-items: center; gap: 12px; padding: 12px; border-bottom: 1px solid #16191d; }
 .punishment-row b, .punishment-row strong { color: var(--accent) !important; font-weight: 800 !important; }
 .add-btn { background: var(--accent); border: none; width: 35px; height: 35px; font-weight: 900; cursor: pointer; border-radius: 4px; }
 .input-box { background: #000; border: 1px solid #333; color: var(--accent); width: 55px; padding: 8px; text-align: center; font-weight: bold; }
 
-/* SIDEBAR - DESIGN DLE OBRÁZKU */
 .sidebar { width: 420px; background: #000; border-left: 2px solid #111; display: flex; flex-direction: column; }
 .sidebar-header { padding: 20px; font-weight: 900; color: #fff; font-size: 18px; }
 .case-list { flex: 1; overflow-y: auto; padding: 15px; }
 
 .protocol-card { 
-    background: #0d0d0d; 
-    border: 1px solid #1a1a1a; 
-    border-left: 5px solid var(--accent); 
-    padding: 15px; 
-    margin-bottom: 15px; 
-    position: relative; 
-    border-radius: 4px;
+    background: #0d0d0d; border: 1px solid #1a1a1a; border-left: 5px solid var(--accent); 
+    padding: 15px; margin-bottom: 15px; position: relative; border-radius: 4px;
 }
-
 .card-top { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .card-title { color: var(--accent); font-weight: 900; font-size: 15px; }
 .tag-zbrojak { background: var(--red-tag); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 900; text-transform: uppercase; }
 .card-desc { color: #ccc; font-size: 12px; line-height: 1.4; margin-bottom: 15px; padding-right: 25px; }
 .card-footer { text-align: right; font-size: 20px; font-weight: 900; color: #fff; }
 .card-close { position: absolute; top: 10px; right: 10px; color: #ff4444; cursor: pointer; font-size: 20px; font-weight: bold; opacity: 0.7; }
-.card-close:hover { opacity: 1; }
 
-/* PATIČKA */
 .sidebar-footer { padding: 20px; border-top: 1px solid #111; }
 .summary-line { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; }
 .label-celkem { font-weight: 900; color: #fff; font-size: 20px; }
-.values-celkem { font-weight: 900; font-size: 22px; color: #fff; }
 #sumJail { color: var(--blue-ui); }
 #sumFine { color: var(--green-ui); }
 .unit-j { color: var(--blue-ui); font-size: 16px; }
 .unit-f { color: var(--green-ui); font-size: 16px; }
 .new-case-btn { width: 100%; background: var(--blue-ui); border: none; color: #fff; padding: 15px; font-weight: 900; cursor: pointer; border-radius: 4px; text-transform: uppercase; }
 
-/* Alert */
 .alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; justify-content: center; align-items: center; z-index: 10000; }
 .alert-box { background: #000; border: 2px solid var(--red-tag); padding: 30px; text-align: center; }
 .alert-btn { background: var(--red-tag); border: none; color: #fff; padding: 10px 30px; cursor: pointer; font-weight: bold; margin-top: 15px; }

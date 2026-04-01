@@ -5,7 +5,8 @@ window.onload = load;
 
 async function load() {
     try {
-        const res = await fetch('tresty.html?v=' + Date.now());
+        // Vynucení stažení nové verze zákoníku přidáním časového razítka
+        const res = await fetch('tresty.html?nocache=' + Date.now());
         const html = await res.text();
         const doc = new DOMParser().parseFromString(html, 'text/html');
         
@@ -17,7 +18,7 @@ async function load() {
                 const match = rawText.match(/sazba\s+(\d+)-(\d+)/i) || rawText.match(/od\s+(\d+)\s+let/i);
                 return {
                     id: `item_${cIdx}_${sIdx}`,
-                    fullHtml: line.innerHTML, // Ukládáme kompletní HTML včetně písmen a) b) c)
+                    fullHtml: line.innerHTML,
                     plainText: rawText,
                     hasZbrojak: rawText.toLowerCase().includes("zbrojní průkaz"),
                     minJ: match ? parseInt(match[1]) : 0,
@@ -28,7 +29,7 @@ async function load() {
             })
         }));
         render();
-    } catch (e) { console.error("Chyba při načítání zákoníku:", e); }
+    } catch (e) { console.error("Chyba:", e); }
 }
 
 function render() {
@@ -73,12 +74,10 @@ function addToCase(subId, catId) {
         return;
     }
 
-    // Varování pro SZ
     if (valJ >= 25) {
-        showAlert("!!! KONTAKTOVAT STÁTNÍHO ZÁSTUPCE !!!\nTento trest musí být schválen.");
+        showAlert("!!! KONTAKTOVAT STÁTNÍHO ZÁSTUPCE !!!\nTento trest musí schválit státní zástupce.");
     }
 
-    // Uložení do případu
     activeCase.push({ 
         title: cat.title, 
         desc: sub.plainText, 
