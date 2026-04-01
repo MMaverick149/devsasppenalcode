@@ -11,80 +11,78 @@ body {
     color: var(--text);
     font-family: 'Segoe UI', sans-serif;
     margin: 0;
+    overflow: hidden; /* Zabráníme scrollu celého body */
 }
 
 /* Login Screen */
 #loginScreen {
     position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
+    inset: 0;
     background: #000;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    z-index: 1000;
+    z-index: 9999;
 }
 
-.terminal-title { color: var(--accent); letter-spacing: 5px; margin: 0; }
-.terminal-subtitle { color: #444; font-size: 10px; margin-bottom: 30px; }
-
+.terminal-title { color: var(--accent); letter-spacing: 5px; margin: 0; font-size: 2.5rem; }
 .login-btn {
-    background: transparent;
-    border: 1px solid var(--accent);
-    color: var(--accent);
-    padding: 10px 30px;
-    cursor: pointer;
-    font-weight: bold;
+    background: transparent; border: 1px solid var(--accent); color: var(--accent);
+    padding: 15px 40px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s;
+}
+.login-btn:hover { background: var(--accent); color: #000; }
+
+/* Layout Appky */
+.app-container { height: 100vh; display: flex; flex-direction: column; }
+
+.top-nav {
+    height: 60px; background: #08090a; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; padding: 0 20px;
 }
 
-/* Layout */
-.container { display: flex; }
-.main-side { flex: 1; padding: 20px; margin-right: 350px; }
+.search-box input {
+    background: #111; border: 1px solid #333; color: #fff;
+    padding: 10px; width: 400px; border-radius: 4px;
+}
 
-/* Sidebar - FIXNÍ POZICE */
+.content-wrapper { display: flex; flex: 1; overflow: hidden; }
+
+/* Zákoník - Scrolluje samostatně */
+.laws-section { flex: 1; overflow-y: auto; padding: 20px; }
+
+/* Sidebar - FIXNÍ */
 .sidebar {
-    width: 350px;
-    background: #08090a;
-    border-left: 1px solid var(--border);
-    position: fixed;
-    right: 0; top: 0; height: 100vh;
-    display: flex;
-    flex-direction: column;
+    width: 350px; background: #08090a; border-left: 1px solid var(--border);
+    display: flex; flex-direction: column;
 }
 
+.sidebar-header { padding: 15px; font-weight: bold; border-bottom: 1px solid var(--border); }
 .case-list { flex: 1; overflow-y: auto; padding: 15px; }
 
-.sidebar-footer { padding: 20px; background: #0a0b0d; border-top: 1px solid var(--border); }
+.protocol-card {
+    background: var(--card); border-left: 3px solid var(--accent);
+    padding: 12px; margin-bottom: 10px; position: relative;
+}
 
-/* Tlačítka a políčka */
+/* Tlačítka v zákoníku */
 .add-btn {
-    background: var(--accent);
-    border: none;
-    width: 35px; height: 35px;
-    font-weight: bold; cursor: pointer;
-    border-radius: 4px;
+    background: var(--accent); border: none; width: 35px; height: 35px;
+    font-weight: bold; cursor: pointer; border-radius: 4px;
 }
 
 .input-box {
-    background: #111; border: 1px solid #222;
-    color: #fff; width: 60px; padding: 8px;
-    text-align: center; border-radius: 4px;
+    background: #111; border: 1px solid #333; color: #fff;
+    width: 60px; padding: 8px; text-align: center;
 }
 
-.input-box:disabled {
-    background: #000 !important;
-    color: var(--accent) !important;
-    cursor: not-allowed;
-}
+.input-box:disabled { color: var(--accent); opacity: 0.7; }
 
 /* Alert */
 .alert-overlay {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(0,0,0,0.9);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 2000;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+    display: flex; justify-content: center; align-items: center; z-index: 10000;
 }
 .alert-box {
-    background: #111; border: 1px solid var(--accent);
-    padding: 30px; text-align: center; border-radius: 8px;
+    background: #111; border: 1px solid #f44336; padding: 30px; border-radius: 8px; text-align: center;
 }
