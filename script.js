@@ -1,7 +1,7 @@
 let laws = [];
 let protocol = [];
 
-window.onload = () => load();
+function login() { document.getElementById('loginOverlay').style.display = 'none'; load(); }
 
 async function load() {
     const res = await fetch('tresty.html?v=' + Date.now());
@@ -9,37 +9,37 @@ async function load() {
     const doc = new DOMParser().parseFromString(html, 'text/html');
     laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
         const title = item.getAttribute('data-title');
-        const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+        const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => {
+            const raw = line.innerText.toLowerCase();
+            const match = raw.match(/sazba\s+(\d+)-(\d+)/i) || raw.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+)/i);
+            return { 
+                text: line.innerText, 
+                html: line.innerHTML, 
+                minJ: match ? parseInt(match[1]) : 0, 
+                maxJ: match ? parseInt(match[2]) : 999,
+                isZP: line.innerText.toUpperCase().includes("ZBROJNÍ")
+            };
+        });
         return { id: "law_"+idx, title, subs };
     });
     render();
 }
 
-function parseSub(raw, html) {
-    const txt = raw.toLowerCase();
-    const match = txt.match(/sazba\s+(\d+)-(\d+)/i) || txt.match(/od\s+(\d+)\s+.*(?:do|až|po)\s+(\d+)/i);
-    return { 
-        text: raw, html, 
-        minJ: match ? parseInt(match[1]) : 0, 
-        maxJ: match ? parseInt(match[2]) : 999,
-        isZP: raw.toUpperCase().includes("ZBROJNÍ")
-    };
-}
-
 function render() {
     const query = document.getElementById('searchInput').value.toLowerCase();
-    document.getElementById('lawsContainer').innerHTML = laws
-        .filter(l => l.title.toLowerCase().includes(query))
+    const container = document.getElementById('lawsContainer');
+    container.innerHTML = laws
+        .filter(l => l.title.toLowerCase().includes(query) || l.subs.some(s => s.text.toLowerCase().includes(query)))
         .map(law => `
         <div class="law-item">
-            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title}</div>
+            <div class="law-header" onclick="this.parentElement.classList.toggle('active')">${law.title} <span>▼</span></div>
             <div class="law-content">
                 ${law.subs.map((sub, sIdx) => `
-                    <div class="row">
-                        <div style="flex:1">${sub.html}</div>
-                        <input type="number" class="input-box" id="j_${law.id}_${sIdx}" placeholder="J">
-                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" placeholder="$">
-                        <button class="add-btn" onclick="add('${law.id}', ${sIdx})">+</button>
+                    <div class="row" style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid #1c1f24;">
+                        <div style="flex:1;">${sub.html}</div>
+                        <input type="number" class="input-box" id="j_${law.id}_${sIdx}" placeholder="J" style="background:#000; border:1px solid #333; color:var(--accent); width:45px; padding:8px; text-align:center;">
+                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" placeholder="$" style="background:#000; border:1px solid #333; color:var(--accent); width:60px; padding:8px; text-align:center;">
+                        <button onclick="add('${law.id}', ${sIdx})" style="background:var(--accent); border:none; padding:8px 15px; font-weight:900; cursor:pointer; border-radius:4px;">+</button>
                     </div>
                 `).join('')}
             </div>
@@ -58,20 +58,20 @@ function add(lawId, sIdx) {
         return;
     }
 
-    protocol.push({ title: law.title, text: sub.text, jail: jVal, fine: fVal, isZP: sub.isZP });
+    protocol.push({ title: law.title, subText: sub.text, jail: jVal, fine: fVal, isZP: sub.isZP });
     update();
 }
 
 function update() {
     document.getElementById('caseEntries').innerHTML = protocol.map(p => `
         <div class="protocol-card">
-            <div style="font-size:14px; margin-bottom:5px;"><b>${p.title}</b> ${p.isZP ? '<span class="badge-zp">Zbrojní Průkaz</span>':''}</div>
-            <div style="font-size:12px; color:#aaa; margin-bottom:10px;">${p.text}</div>
-            <div class="p-price"><b>${p.jail} LET | $${p.fine}</b></div>
+            <span class="p-header">${p.title} ${p.isZP ? '<span style="background:var(--red); color:#fff; font-size:10px; padding:2px 5px; border-radius:3px; margin-left:10px;">Zbrojní Průkaz</span>' : ''}</span>
+            <div class="p-text">${p.subText}</div>
+            <div class="p-footer">${p.jail} LET | $${p.fine.toLocaleString()}</div>
         </div>`).join('');
     
     document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
-    document.getElementById('sumFine').innerText = "$" + protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
+    document.getElementById('sumFine').innerText = protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
 }
 
 function newCase() { protocol = []; update(); }
