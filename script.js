@@ -1,33 +1,18 @@
 let laws = [];
 let protocol = [];
 
-function login() {
-    document.getElementById('loginOverlay').style.display = 'none';
-    load();
-}
-
-function showAlert(msg) {
-    document.getElementById('alertMsg').innerHTML = msg;
-    document.getElementById('customAlert').style.display = 'flex';
-}
-
-function closeAlert() {
-    document.getElementById('customAlert').style.display = 'none';
-}
+window.onload = () => load();
 
 async function load() {
-    try {
-        const res = await fetch('tresty.html?v=' + Date.now());
-        const html = await res.text();
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        
-        laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
-            const title = item.getAttribute('data-title');
-            const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
-            return { id: "law_"+idx, title, subs };
-        });
-        render();
-    } catch (e) { showAlert("CHYBA NAČÍTÁNÍ DAT!"); }
+    const res = await fetch('tresty.html?v=' + Date.now());
+    const html = await res.text();
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    laws = Array.from(doc.querySelectorAll('.law-item')).map((item, idx) => {
+        const title = item.getAttribute('data-title');
+        const subs = Array.from(item.querySelectorAll('.sub-line')).map(line => parseSub(line.innerText, line.innerHTML));
+        return { id: "law_"+idx, title, subs };
+    });
+    render();
 }
 
 function parseSub(raw, html) {
@@ -36,7 +21,8 @@ function parseSub(raw, html) {
     return { 
         text: raw, html, 
         minJ: match ? parseInt(match[1]) : 0, 
-        maxJ: match ? parseInt(match[2]) : 999 
+        maxJ: match ? parseInt(match[2]) : 999,
+        isZP: raw.toUpperCase().includes("ZBROJNÍ")
     };
 }
 
@@ -52,6 +38,7 @@ function render() {
                     <div class="row">
                         <div style="flex:1">${sub.html}</div>
                         <input type="number" class="input-box" id="j_${law.id}_${sIdx}" placeholder="J">
+                        <input type="number" class="input-box" id="f_${law.id}_${sIdx}" placeholder="$">
                         <button class="add-btn" onclick="add('${law.id}', ${sIdx})">+</button>
                     </div>
                 `).join('')}
@@ -62,29 +49,30 @@ function render() {
 function add(lawId, sIdx) {
     const law = laws.find(l => l.id === lawId);
     const sub = law.subs[sIdx];
-    const val = parseInt(document.getElementById(`j_${lawId}_${sIdx}`).value) || 0;
+    const jVal = parseInt(document.getElementById(`j_${lawId}_${sIdx}`).value) || 0;
+    const fVal = parseInt(document.getElementById(`f_${lawId}_${sIdx}`).value) || 0;
 
-    if (val > 0 && (val < sub.minJ || (val > sub.maxJ && sub.maxJ !== 999))) {
-        showAlert(`LIMIT PŘEKROČEN!<br>MAXIMÁLNĚ ${sub.maxJ} LET.`);
+    if (jVal > sub.maxJ && sub.maxJ !== 999) {
+        document.getElementById('alertMsg').innerText = `Sazba je max ${sub.maxJ} let. Více nelze udělit ani se Státním Zástupcem!`;
+        document.getElementById('customAlert').style.display = 'flex';
         return;
     }
 
-    protocol.push({ lawId, title: law.title, jail: val });
+    protocol.push({ title: law.title, text: sub.text, jail: jVal, fine: fVal, isZP: sub.isZP });
     update();
 }
 
 function update() {
     document.getElementById('caseEntries').innerHTML = protocol.map(p => `
         <div class="protocol-card">
-            <span style="color:var(--accent); font-weight:bold;">${p.title}</span>
-            <div style="text-align:right; font-weight:900;">${p.jail} J</div>
+            <div style="font-size:14px; margin-bottom:5px;"><b>${p.title}</b> ${p.isZP ? '<span class="badge-zp">Zbrojní Průkaz</span>':''}</div>
+            <div style="font-size:12px; color:#aaa; margin-bottom:10px;">${p.text}</div>
+            <div class="p-price"><b>${p.jail} LET | $${p.fine}</b></div>
         </div>`).join('');
     
-    const totalJ = protocol.reduce((a, b) => a + b.jail, 0);
-    document.getElementById('sumJail').innerText = totalJ;
+    document.getElementById('sumJail').innerText = protocol.reduce((a, b) => a + b.jail, 0);
+    document.getElementById('sumFine').innerText = "$" + protocol.reduce((a, b) => a + b.fine, 0).toLocaleString();
 }
 
-function newCase() {
-    protocol = [];
-    update();
-}
+function newCase() { protocol = []; update(); }
+function closeAlert() { document.getElementById('customAlert').style.display = 'none'; }

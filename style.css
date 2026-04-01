@@ -1,44 +1,51 @@
-:root { --bg: #0a0b0d; --accent: #ffcc00; --border: #1c1f24; --card: #111317; --red: #ff4d4d; }
+:root { --bg: #0a0b0d; --accent: #ffcc00; --border: #1c1f24; --card: #111317; --red: #ff4d4d; --blue: #00a2ff; }
 
 body, html { margin: 0; padding: 0; background: var(--bg); color: #fff; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden; }
 
-/* LOGIN */
-#loginOverlay { position: fixed; inset: 0; background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; text-align: center; }
-.login-card h1 { color: var(--accent); font-size: 40px; letter-spacing: 3px; margin: 0; }
-.login-card p { color: #555; letter-spacing: 4px; margin-bottom: 40px; font-size: 14px; }
-.login-btn { background: #fff; border: none; padding: 10px 30px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+/* KONTROLA ZÁKONNOSTI (Varování) */
+.alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 10000; display: none; justify-content: center; align-items: center; }
+.alert-box { 
+    background: #000; border: 2px solid var(--red); border-radius: 15px; width: 500px; padding: 30px; text-align: center;
+    box-shadow: 0 0 30px rgba(255, 77, 77, 0.2);
+}
+.alert-header { color: var(--red); text-transform: uppercase; letter-spacing: 2px; font-size: 14px; margin-bottom: 20px; font-weight: bold; }
+.alert-icon { font-size: 50px; color: var(--red); margin-bottom: 20px; }
+.alert-box h2 { font-size: 28px; margin: 10px 0; text-transform: uppercase; }
+.alert-box p { color: #ccc; font-size: 16px; margin-bottom: 30px; }
+.alert-footer { display: flex; gap: 20px; justify-content: center; }
+.btn-red { background: var(--red); border: none; padding: 10px 40px; color: #fff; font-weight: 900; cursor: pointer; border-radius: 5px; text-transform: uppercase; }
+.btn-black { background: #111; border: 1px solid #333; padding: 10px 40px; color: #fff; font-weight: 900; cursor: pointer; border-radius: 5px; text-transform: uppercase; }
 
-/* VAROVÁNÍ SYSTÉMU - PŘESNĚ PODLE SCREENU */
-.alert-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 10000; display: none; justify-content: center; align-items: center; }
-.alert-box { background: #111; width: 450px; border: none; box-shadow: 0 0 40px rgba(0,0,0,1); }
-.alert-header { background: var(--red); color: #000; padding: 12px; font-weight: 900; text-align: center; font-size: 18px; letter-spacing: 1px; }
-.alert-content { padding: 40px 20px; text-align: center; }
-.alert-body { font-size: 22px; font-weight: 900; color: #fff; margin-bottom: 30px; text-transform: uppercase; }
-.alert-btn { background: #fff; border: none; padding: 10px 60px; font-weight: 900; cursor: pointer; text-transform: uppercase; font-size: 16px; }
+/* BOČNÍ PANEL */
+#rightPanel { flex: 1.2; background: var(--bg); border-left: 2px solid var(--border); padding: 20px; display: flex; flex-direction: column; }
+#caseEntries { flex: 1; overflow-y: auto; margin-bottom: 20px; }
 
-/* ROZLOŽENÍ */
-.search-bar { background: #000; padding: 12px 20px; border-bottom: 2px solid var(--border); }
-#searchInput { background: transparent; border: 1px solid #333; color: #fff; padding: 5px 10px; width: 250px; outline: none; }
+/* Karta v protokolu */
+.protocol-card { 
+    background: #000; padding: 15px; border-radius: 5px; border-left: 4px solid var(--accent); margin-bottom: 10px; position: relative;
+}
+.protocol-card b, .protocol-card strong { color: var(--accent) !important; }
+.p-price { position: absolute; right: 15px; bottom: 15px; font-size: 20px; font-weight: 900; color: var(--accent); }
+.badge-zp { background: var(--red); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; margin-left: 10px; }
 
-#mainApp { display: flex; height: calc(100vh - 55px); width: 100%; }
-#leftPanel { flex: 3; overflow-y: auto; padding: 20px; border-right: 2px solid var(--border); }
-#rightPanel { flex: 1.2; background: var(--card); padding: 20px; }
+/* Spodní součet a tlačítko */
+.summary-box { border-top: 2px solid var(--border); padding-top: 20px; }
+.total-text { font-size: 22px; font-weight: 900; display: flex; justify-content: space-between; margin-bottom: 15px; text-transform: uppercase; }
+.total-val { color: var(--blue); }
+.total-val-f { color: #2ecc71; }
+.new-case-btn { 
+    background: var(--blue); color: #fff; border: none; width: 100%; padding: 15px; 
+    font-weight: 900; font-size: 16px; border-radius: 5px; cursor: pointer; text-transform: uppercase;
+}
 
-/* SEKCE A PARAGRAFY */
-.law-item { margin-bottom: 10px; background: #0a0b0d; border-radius: 4px; overflow: hidden; }
-.law-header { padding: 15px; color: var(--accent); font-weight: bold; cursor: pointer; background: #111317; display: flex; justify-content: space-between; align-items: center; }
-.law-header:hover { background: #16181d; }
-.law-header::after { content: '▼'; font-size: 10px; opacity: 0.5; }
-.law-item.active .law-header::after { content: '▲'; }
+/* ŽLUTÝ TUČNÝ TEXT */
+b, strong, .highlight { color: var(--accent) !important; font-weight: bold; }
+.row { display: flex; align-items: center; gap: 15px; padding: 10px 0; border-bottom: 1px solid #1c1f24; }
+.input-box { background: #000; border: 1px solid #333; color: var(--accent); width: 45px; padding: 8px; text-align: center; border-radius: 4px; }
+.add-btn { background: var(--accent); border: none; width: 35px; height: 35px; font-weight: 900; cursor: pointer; border-radius: 4px; }
+
+/* Sekce */
+.law-header { padding: 15px; color: var(--accent); font-weight: bold; cursor: pointer; background: #111317; border-radius: 4px; display: flex; justify-content: space-between; }
+.law-item { margin-bottom: 10px; border: 1px solid var(--border); }
 .law-content { display: none; padding: 10px 20px; }
 .law-item.active .law-content { display: block; }
-
-.row { display: flex; align-items: center; gap: 15px; padding: 12px 0; border-bottom: 1px solid #1c1f24; }
-.highlight { color: var(--accent); font-weight: bold; }
-.input-box { background: #000; border: 1px solid #333; color: var(--accent); width: 45px; padding: 8px; text-align: center; border-radius: 3px; }
-.add-btn { background: var(--accent); border: none; width: 35px; height: 35px; font-weight: 900; cursor: pointer; border-radius: 3px; }
-
-/* PROTOKOL */
-.summary-line { font-weight: bold; margin: 15px 0; font-size: 16px; }
-.new-case-btn { background: #eee; border: none; padding: 4px 12px; font-size: 13px; cursor: pointer; margin-bottom: 20px; border-radius: 2px; }
-.protocol-card { background: #000; padding: 15px; border-left: 3px solid var(--accent); margin-bottom: 10px; position: relative; }
