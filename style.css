@@ -67,3 +67,50 @@ body { background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-
     border-color: var(--accent);
     outline: none;
 }
+
+:root {
+    --accent: #ffcc00;
+    --bg: #050505;
+    --card: #0d0e11;
+    --border: #1c1f24;
+    --text: #e0e0e0;
+}
+
+/* ... předchozí styly zůstávají stejné ... */
+
+.category-header { 
+    background: #121417; 
+    color: var(--accent); 
+    padding: 15px; 
+    font-weight: 900; /* Extra tučné pro nadpisy sekcí */
+    cursor: pointer; 
+    display: flex; 
+    justify-content: space-between; 
+    text-transform: uppercase; 
+    font-size: 14px; 
+}
+
+.law-text b, .law-text strong {
+    color: var(--accent);
+    font-weight: bold; /* Zajištění tučnosti u žlutých částí v textu */
+}
+
+.val-input { 
+    background: #000; 
+    border: 1px solid #333; 
+    color: var(--accent); 
+    font-weight: bold; /* Čísla v políčkách budou tučná */
+    width: 55px; 
+    padding: 8px; 
+    text-align: center; 
+}
+
+.total-line span { 
+    color: var(--accent); 
+    font-weight: bold; /* Celkový součet v sidebaru */
+}
+
+.protocol-card b {
+    color: var(--accent);
+    font-weight: bold;
+}
